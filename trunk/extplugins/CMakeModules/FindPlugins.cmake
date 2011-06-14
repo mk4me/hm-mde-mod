@@ -1,0 +1,7 @@
+# przygotowanie do szukania
+FIND_INIT(PLUGINS plugins)
+FIND_INCLUDE_PLATFORM_HEADERS(PLUGINS plugins)
+set(PLUGINS_FOUND 1)
+list( APPEND FIND_RESULTS PLUGINS)
+# skopiowanie
+FIND_FINISH(PLUGINS)
