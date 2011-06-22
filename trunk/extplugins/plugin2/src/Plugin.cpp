@@ -28,7 +28,7 @@ private:
     core::ObjectWrapperPtr object;
 
 public:
-    UNIQUE_ID("{55D3B9E4-1759-4BFE-B9CF-D5C25155D442}", "Sample parser");
+    UNIQUE_ID("{55Q3B9E4-1759-4BFE-B9CF-D5C25155D442}", "Sample parser");
     
 public:
     SampleParser()
@@ -171,10 +171,15 @@ public:
     virtual void update(double deltaTime)
     {
     }
+
+    virtual void reset()
+    {
+
+    }
 };
 
 
-CORE_PLUGIN_BEGIN("SamplePlugin2", UID::GenerateUniqueID("{07FA085C-B1EF-4D2F-8281-785D5EA5586F}"))
+CORE_PLUGIN_BEGIN("SamplePlugin2", UID::GenerateUniqueID("{07FA085C-B1EF-4D2F-8281-785D5EA5086F}"))
 CORE_PLUGIN_ADD_PARSER(SampleParser)
 CORE_PLUGIN_ADD_VISUALIZER(SampleVisualizer)
 CORE_PLUGIN_ADD_OBJECT_WRAPPER(std::string)

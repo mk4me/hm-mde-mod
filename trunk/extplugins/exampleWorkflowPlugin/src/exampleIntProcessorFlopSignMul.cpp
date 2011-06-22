@@ -14,24 +14,24 @@ const std::string & ExampleIntProccesorFlopSignMul::getName() const
 
 void ExampleIntProccesorFlopSignMul::process(core::IObjectSource* input, core::IObjectOutput* output)
 {
-    const auto & inIntsA = input->getObjects(0);
-    const auto & inIntsB = input->getObjects(1);
-    auto & outInts = output->getObjects(0);
+    auto inIntsA = input->getObjects(0);
+    auto inIntsB = input->getObjects(1);
+    auto outInts = output->getObjects(0);
 
-    if(inIntsA == nullptr || inIntsB == nullptr)
+    if(inIntsA.empty() == true || inIntsB.empty() == true)
     {
         return;
     }
 
-    int maxIndex = max(inIntsA->size(), inIntsB->size());
+    int maxIndex = min(inIntsA.size(), inIntsB.size());
 
     for(int i = 0; i < maxIndex; i++){
-        IntsConstPtr valsA = inIntsA->getObject(i)->get();
-        IntsConstPtr valsB = inIntsB->getObject(i)->get();
+        IntsConstPtr valsA = inIntsA.getObject(i);
+        IntsConstPtr valsB = inIntsB.getObject(i);
         
         IntsPtr outVals(new Ints());
 
-        int maxIndexLocal = max(valsA->size(), valsB->size());
+        int maxIndexLocal = min(valsA->size(), valsB->size());
 
         int sign = 1;
 
@@ -44,13 +44,10 @@ void ExampleIntProccesorFlopSignMul::process(core::IObjectSource* input, core::I
                 sign = 1;
             }
             
-            (*outVals)[i] = val;
+            outVals->push_back(val);
         }
 
-        core::ObjectWrapperPtr obj = core::ObjectWrapper::create<Ints>();
-        obj->set(outVals);
-
-        outInts->addObject(obj);
+        outInts.addObject(outVals);
     }
 }
 

@@ -168,6 +168,10 @@ public:
     virtual void update(double deltaTime)
     {
     }
+    virtual void reset()
+    {
+
+    }
 };
 
 

@@ -19,6 +19,8 @@ void ExampleIntVisualizerStatistics::getInputInfo(std::vector<core::IInputDescri
     input.modify = false;
     input.required = true;
     input.type = typeid(ExampleIntStatistics);
+
+    info.push_back(input);
 }
 
 void ExampleIntVisualizerStatistics::update(double deltaTime)

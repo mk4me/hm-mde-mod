@@ -14,26 +14,23 @@ const std::string & ExampleIntProccesorStatistic::getName() const
 
 void ExampleIntProccesorStatistic::process(core::IObjectSource* input, core::IObjectOutput* output)
 {
-    const auto & inInts = input->getObjects(0);
-    auto & outInts = output->getObjects(0);
+    auto inInts = input->getObjects(0);
+    auto outInts = output->getObjects(0);
 
-    if(inInts == nullptr)
+    if(inInts.empty() == true)
     {
         return;
     }
 
-    for(int i = 0; i < inInts->size(); i++){
-        IntsConstPtr vals = inInts->getObject(i)->get();
+    for(int i = 0; i < inInts.size(); i++){
+        IntsConstPtr vals = inInts.getObject(i);
         ExampleIntStatisticsPtr stats(new ExampleIntStatistics());
 
         for(auto it = vals->begin(); it != vals->end(); it++){
             stats->addSample(*it);
         }
 
-        core::ObjectWrapperPtr obj = core::ObjectWrapper::create<ExampleIntStatistics>();
-        obj->set(stats);
-
-        outInts->addObject(obj);
+        outInts.addObject(stats);
     }
 }
 
@@ -53,7 +50,7 @@ void ExampleIntProccesorStatistic::getOutputInfo( std::vector<OutputInfo> & outp
     OutputInfo info;
     info.name = "STATS";
     info.dependentInput.insert(0);
-    info.type = typeid(Ints);
+    info.type = typeid(ExampleIntStatistics);
 
     output.push_back(info);
 }

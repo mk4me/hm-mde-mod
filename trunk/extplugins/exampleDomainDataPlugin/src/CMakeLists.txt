@@ -1,7 +1,7 @@
-project(Plugin1)
+project(exampleDomainDataPlugin)
 # nazwa
 set(TARGET_TARGETNAME
-	plugin_example1
+	plugin_exampleDomainData
 )
 #add_definitions(-DVIDLIB_LIBRARY)
 # UWAGA: poniewa¿ u¿ywamy "source_group", ka¿dy nag³ówek/Ÿród³o musi do którejœ
@@ -11,14 +11,15 @@ set(TARGET_TARGETNAME
 
 # nag³ówki prywatne
 set(PRIVATE_H
-	#private.h
+	#private headers
 )
-#source_group("${SOURCEGROUP_PRIVATE_HEADERS}" FILES ${PRIVATE_H})
-set (HEADER_PATH ${PROJECT_SOURCE_DIR}/../include)
+source_group("${SOURCEGROUP_PRIVATE_HEADERS}" FILES ${PRIVATE_H})
+
 # nag³ówki publiczne
 string(REPLACE ${PROJECT_ROOT} ${PROJECT_INCLUDE_ROOT} HEADER_PATH ${PROJECT_SOURCE_DIR})
+set (HEADER_PATH ${PROJECT_SOURCE_DIR}/../include)
 set(PUBLIC_H
-	#${HEADER_PATH}/Public.h
+	#public headers
 )
 source_group("${SOURCEGROUP_PUBLIC_HEADERS}" FILES ${PUBLIC_H})
 set(TARGET_H ${PRIVATE_H} ${PUBLIC_H})
@@ -33,25 +34,26 @@ source_group("${SOURCEGROUP_SOURCES}" FILES ${TARGET_SRC})
 
 # # metadane generowane przez MOC
 # SET(TARGET_MOC_H
-    # #testWidget.h
+#	#QT MOC files
 # )
 # QT4_WRAP_CPP(TARGET_MOC_SRC ${TARGET_MOC_H})
 # source_group("${SOURCEGROUP_SOURCES}" FILES ${TARGET_MOC_SRC})
 # set(TARGET_SRC ${TARGET_SRC} ${TARGET_MOC_SRC})
 
-# #------------------------------------------------------------------------------
-# # UI
+#------------------------------------------------------------------------------
+# UI
 # set(TARGET_UI
-	# #ui/ConsoleWidget.ui
+#	#QT UI files
 # )
 # QT4_WRAP_UI(TARGET_UI_H ${TARGET_UI})
 # source_group("${SOURCEGROUP_UI}" FILES ${TARGET_UI_H} ${TARGET_UI})
 # set(TARGET_H ${TARGET_H} ${TARGET_UI_H} ${TARGET_UI})
 
+
 # #------------------------------------------------------------------------------
 # # RC
 # set(TARGET_RC
-	# #ui/ConsoleWidget.qrc
+# 	 #QT RC files
 # )
 # QT4_ADD_RESOURCES(TARGET_RCC_SRC ${TARGET_RC})
 # source_group("${SOURCEGROUP_UI}" FILES ${TARGET_RC} ${TARGET_RCC_SRC})
@@ -71,8 +73,8 @@ source_group("${SOURCEGROUP_SOURCES}" FILES ${TARGET_SRC})
 # source_group("${SOURCEGROUP_SOURCES}\\config" FILES ${CONFIG_SRC})
 # set(TARGET_SRC ${TARGET_SRC} ${CONFIG_SRC})
 
-# #------------------------------------------------------------------------------
-# # prekompilowany nag³ówek
+#------------------------------------------------------------------------------
+# prekompilowany nag³ówek
 # set(PRECOMPILED_H PCH.h)
 # set(PRECOMPILED_SRC PCH.cpp)
 # SET_PRECOMPILED_HEADER(${PRECOMPILED_H} ${PRECOMPILED_SRC} "${TARGET_SRC}")
@@ -85,19 +87,19 @@ source_group("${SOURCEGROUP_SOURCES}" FILES ${TARGET_SRC})
 # tworzenie
 
 # obsluga OpenGL
-set(QT_USE_QTOPENGL TRUE) 
-include(${QT_USE_FILE})
+#set(QT_USE_QTOPENGL TRUE) 
+#include(${QT_USE_FILE})
 
 # kompilacja do dll
 add_library(${TARGET_TARGETNAME} SHARED ${TARGET_SRC} ${TARGET_H})
 
 #instalacja
-install(TARGETS ${TARGET_TARGETNAME} DESTINATION bin COMPONENT plugin1)
+install(TARGETS ${TARGET_TARGETNAME} DESTINATION bin COMPONENT exampleDomainDataPlugin)
 
 GET_FILENAME_COMPONENT(PLUGINS_DESTINATION_DIR_TMP  "[HKEY_LOCAL_MACHINE\\SOFTWARE\\PJWSTK\\EDR;ApplicationDataPath]" ABSOLUTE CACHE)
 
 file(TO_NATIVE_PATH ${PLUGINS_DESTINATION_DIR_TMP} PLUGINS_DESTINATION_DIR_NATIVE)
-#message(${PLUGINS_DESTINATION_DIR_NATIVE})
+message(${PLUGINS_DESTINATION_DIR_NATIVE})
 add_custom_command(  TARGET ${TARGET_TARGETNAME}
                      POST_BUILD 
                      COMMAND mkdir \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\" | mkdir \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\" | copy \"$(SolutionDir)bin\\Debug\\$(TargetName)$(TargetExt)\" \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\\$(TargetName)$(TargetExt)\" )
@@ -110,8 +112,8 @@ include_directories(${DEFAULT_PROJECT_INCLUDES})
 target_link_libraries(${TARGET_TARGETNAME} ${DEFAULT_PROJECT_LIBS})	
 GET_FILENAME_COMPONENT(PROGRAM_FILES_DIR_TMP  "[HKEY_LOCAL_MACHINE\\SOFTWARE\\PJWSTK\\EDR;ProgramFilesPath]" ABSOLUTE CACHE)
 file(TO_NATIVE_PATH ${PROGRAM_FILES_DIR_TMP} PROGRAM_FILES_DIR)
-#message(${PROGRAM_FILES_DIR_TMP})
+message(${PROGRAM_FILES_DIR_TMP})
 
 
 procedural_create_vcproj_userfile(${TARGET_TARGETNAME} ${PROGRAM_FILES_DIR})
-ON_PROJECT_ADDED(plugin1)
+ON_PROJECT_ADDED(exampleDomainDataPlugin)

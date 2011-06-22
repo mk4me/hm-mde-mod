@@ -14,7 +14,7 @@ ExampleWidgetProcessorFilterConfiguration::ExampleWidgetProcessorFilterConfigura
     connect(maxFilter, SIGNAL(pressed()), this, SLOT(radioChecked()));
     connect(inRangeFilter, SIGNAL(pressed()), this, SLOT(radioChecked()));
     connect(outRangeFilter, SIGNAL(pressed()), this, SLOT(radioChecked()));
-    connect(saveFilterButton, SIGNAL(pressed()), this, SLOT(saveFilter()));
+    connect(setFilterButton, SIGNAL(pressed()), this, SLOT(saveFilter()));
 }
 
 void ExampleWidgetProcessorFilterConfiguration::radioChecked()

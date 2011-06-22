@@ -1,7 +1,7 @@
 project(exampleWorkflowPlugin)
 # nazwa
 set(TARGET_TARGETNAME
-	exampleWorkflowPlugin
+	plugin_exampleWorkflow
 )
 #add_definitions(-DVIDLIB_LIBRARY)
 # UWAGA: poniewa¿ u¿ywamy "source_group", ka¿dy nag³ówek/Ÿród³o musi do którejœ
@@ -64,6 +64,7 @@ QT4_WRAP_UI(TARGET_UI_H ${TARGET_UI})
 source_group("${SOURCEGROUP_UI}" FILES ${TARGET_UI_H} ${TARGET_UI})
 set(TARGET_H ${TARGET_H} ${TARGET_UI_H} ${TARGET_UI})
 
+
 # #------------------------------------------------------------------------------
 # # RC
 # set(TARGET_RC
@@ -116,7 +117,7 @@ file(TO_NATIVE_PATH ${PLUGINS_DESTINATION_DIR_TMP} PLUGINS_DESTINATION_DIR_NATIV
 message(${PLUGINS_DESTINATION_DIR_NATIVE})
 add_custom_command(  TARGET ${TARGET_TARGETNAME}
                      POST_BUILD 
-                     COMMAND mkdir ${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins | mkdir ${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME} | copy \"$(SolutionDir)bin\\Debug\\$(TargetName)$(TargetExt)\" \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\\$(TargetName)$(TargetExt)\" )
+                     COMMAND mkdir \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\" | mkdir \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\" | copy \"$(SolutionDir)bin\\Debug\\$(TargetName)$(TargetExt)\" \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\\$(TargetName)$(TargetExt)\" )
 
 					
 
@@ -130,4 +131,4 @@ message(${PROGRAM_FILES_DIR_TMP})
 
 
 procedural_create_vcproj_userfile(${TARGET_TARGETNAME} ${PROGRAM_FILES_DIR})
-ON_PROJECT_ADDED(${TARGET_TARGETNAME})
+ON_PROJECT_ADDED(exampleWorkflowPlugin)

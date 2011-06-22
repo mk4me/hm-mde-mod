@@ -27,16 +27,16 @@ ExampleIntProccesorFilter* ExampleIntProccesorFilter::createClone() const
 
 void ExampleIntProccesorFilter::process(core::IObjectSource* input, core::IObjectOutput* output)
 {
-    const auto & inInts = input->getObjects(0);
-    auto & outInts = output->getObjects(0);
+    auto inInts = input->getObjects(0);
+    auto outInts = output->getObjects(0);
 
-    if(inInts == nullptr)
+    if(inInts.empty() == true)
     {
         return;
     }
     
-    for(int i = 0; i < inInts->size(); i++){
-        IntsConstPtr vals = inInts->getObject(i)->get();
+    for(int i = 0; i < inInts.size(); i++){
+        IntsConstPtr vals = inInts.getObject(i);
         IntsPtr ints(new Ints());
 
         for(auto it = vals->begin(); it != vals->end(); it++){
@@ -44,11 +44,8 @@ void ExampleIntProccesorFilter::process(core::IObjectSource* input, core::IObjec
                 ints->push_back(*it);
             }
         }
-        
-        core::ObjectWrapperPtr obj = core::ObjectWrapper::create<Ints>();
-        obj->set(ints);
 
-        outInts->addObject(obj);
+        outInts.addObject(ints);
     }
 }
 
@@ -75,7 +72,7 @@ void ExampleIntProccesorFilter::getOutputInfo( std::vector<OutputInfo> & output 
 
 QWidget* ExampleIntProccesorFilter::getConfigurationWidget()
 {
-    return new ExampleIntWidgetProcessorFilterConfiguration(this);
+    return new ExampleWidgetProcessorFilterConfiguration(this);
 }
 
 void ExampleIntProccesorFilter::setFilter(const DataFilter & dataFilter)
