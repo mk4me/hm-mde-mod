@@ -12,6 +12,8 @@ set(TARGET_TARGETNAME
 # nag³ówki prywatne
 set(PRIVATE_H
 	#private headers
+	exampleScalarChannelProcessor.h
+	exampleScalarConfigurationWidget.h
 )
 source_group("${SOURCEGROUP_PRIVATE_HEADERS}" FILES ${PRIVATE_H})
 
@@ -29,25 +31,27 @@ set(TARGET_H ${PRIVATE_H} ${PUBLIC_H})
 # Ÿród³a
 set(TARGET_SRC
 	Plugin.cpp
+	exampleScalarChannelProcessor.cpp
+	exampleScalarConfigurationWidget.cpp
 )
 source_group("${SOURCEGROUP_SOURCES}" FILES ${TARGET_SRC})
 
-# # metadane generowane przez MOC
-# SET(TARGET_MOC_H
-#	#QT MOC files
-# )
-# QT4_WRAP_CPP(TARGET_MOC_SRC ${TARGET_MOC_H})
-# source_group("${SOURCEGROUP_SOURCES}" FILES ${TARGET_MOC_SRC})
-# set(TARGET_SRC ${TARGET_SRC} ${TARGET_MOC_SRC})
+# metadane generowane przez MOC
+SET(TARGET_MOC_H
+	exampleScalarConfigurationWidget.h
+)
+QT4_WRAP_CPP(TARGET_MOC_SRC ${TARGET_MOC_H})
+source_group("${SOURCEGROUP_SOURCES}" FILES ${TARGET_MOC_SRC})
+set(TARGET_SRC ${TARGET_SRC} ${TARGET_MOC_SRC})
 
 #------------------------------------------------------------------------------
 # UI
-# set(TARGET_UI
-#	#QT UI files
-# )
-# QT4_WRAP_UI(TARGET_UI_H ${TARGET_UI})
-# source_group("${SOURCEGROUP_UI}" FILES ${TARGET_UI_H} ${TARGET_UI})
-# set(TARGET_H ${TARGET_H} ${TARGET_UI_H} ${TARGET_UI})
+set(TARGET_UI
+	ui/exampleScalarConfigurationWidget.ui
+)
+QT4_WRAP_UI(TARGET_UI_H ${TARGET_UI})
+source_group("${SOURCEGROUP_UI}" FILES ${TARGET_UI_H} ${TARGET_UI})
+set(TARGET_H ${TARGET_H} ${TARGET_UI_H} ${TARGET_UI})
 
 
 # #------------------------------------------------------------------------------

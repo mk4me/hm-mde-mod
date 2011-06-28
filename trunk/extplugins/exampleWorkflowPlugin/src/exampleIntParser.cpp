@@ -14,7 +14,7 @@ core::IParser* ExampleIntParser::create()
     return new ExampleIntParser();
 }
 
-void ExampleIntParser::parseFile(core::IDataManager* dataManager, const boost::filesystem::path& path)
+void ExampleIntParser::parseFile(core::IDataManager* dataManager, const core::Filesystem::Path& path)
 {
     using boost::lexical_cast;
     using boost::bad_lexical_cast;
