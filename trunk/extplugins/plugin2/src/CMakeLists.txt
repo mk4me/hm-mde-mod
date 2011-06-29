@@ -101,7 +101,7 @@ file(TO_NATIVE_PATH ${PLUGINS_DESTINATION_DIR_TMP} PLUGINS_DESTINATION_DIR_NATIV
 #message(${PLUGINS_DESTINATION_DIR_NATIVE})
 add_custom_command(  TARGET ${TARGET_TARGETNAME}
                      POST_BUILD 
-                     COMMAND mkdir \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\" | mkdir \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\" | copy \"$(SolutionDir)bin\\Debug\\$(TargetName)$(TargetExt)\" \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\\$(TargetName)$(TargetExt)\" )
+                     COMMAND mkdir \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\" | mkdir \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\" | copy \"$(SolutionDir)bin\\$(Configuration)\\$(TargetName)$(TargetExt)\" \"${PLUGINS_DESTINATION_DIR_NATIVE}\\plugins\\${TARGET_TARGETNAME}\\$(TargetName)$(TargetExt)\" )
 
 					
 
