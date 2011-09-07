@@ -85,6 +85,7 @@ find_package(log4cxx)
 find_package(VidLib)
 find_package(Utils)
 find_package(osgui)
+find_package(c3dlib)
 find_package(plugins)
 find_package(core)
 find_package(KinematicLib)
@@ -126,7 +127,7 @@ endif()
 ADD_PROJECT(plugin1 "CORE;PLUGINS;BOOST;UTILS;OSG;QT;STDINT")
 ADD_PROJECT(plugin2 "CORE;PLUGINS;BOOST;UTILS;OSG;QT;STDINT;KINEMATICLIB;OSGUI;TINYXML")
 ADD_PROJECT(exampleWorkflowPlugin "CORE;PLUGINS;BOOST;UTILS;OSG;QT;STDINT;KINEMATICLIB;OSGUI;TINYXML")
-ADD_PROJECT(exampleDomainDataPlugin "CORE;PLUGINS;BOOST;UTILS;OSG;QT;STDINT;KINEMATICLIB;OSGUI;TINYXML")
+ADD_PROJECT(exampleDomainDataPlugin "CORE;PLUGINS;BOOST;UTILS;OSG;QT;STDINT;KINEMATICLIB;OSGUI;TINYXML;C3DLIB")
 
 #---------------------------------------------------
 # projekt zasobów

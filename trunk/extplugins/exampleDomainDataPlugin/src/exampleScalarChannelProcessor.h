@@ -10,7 +10,7 @@
 #define HEADER_GUARD___EXAMPLESCALARCHANNELPROCESSOR_H__
 
 #include <core/Plugin.h>
-#include <core/C3DChannels.h>
+#include <c3d/C3DChannels.h>
 
 // Przyk³ad prostego elementu przetwarzaj¹cego. Operuje on na danych typu scalar channel.
 // Element prtzetwarzaj¹cy neguje dane skalarne - mamy tutaj przyk³ad jak pibieraæ dane z wejœcia,

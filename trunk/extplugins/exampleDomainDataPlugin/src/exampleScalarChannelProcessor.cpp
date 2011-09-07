@@ -34,22 +34,22 @@ void ExampleScalarChannelProcessor::process(core::IObjectSource* input, core::IO
     for(int i = 0; i < inScalars.size(); i++){
         //przetwarzam dane wejsciowe
         //pobieram jeden element danych wejsciowych
-        core::ScalarChannelConstPtr inScalarData = inScalars.getObject(i);
+        ScalarChannelConstPtr inScalarData = inScalars.getObject(i);
         //kopiuje go - przygotowuje sobie porcje danych wyjsciowych
-        core::ScalarChannelPtr outScalarData(new core::ScalarChannel(inScalarData->getSamplesPerSec()));
+        ScalarChannelPtr outScalarData(new ScalarChannel(inScalarData->getSamplesPerSecond()));
         outScalarData->setName(inScalarData->getName());
-        outScalarData->setXUnit(inScalarData->getXUnit());
-        outScalarData->setYUnit(inScalarData->getYUnit());
+        outScalarData->setTimeBaseUnit(inScalarData->getTimeBaseUnit());
+        outScalarData->setValueBaseUnit(inScalarData->getValueBaseUnit());
 
         //modyfikuje dane ktore bêdê zaraz udostepnia³ na wyjœciu
         for(auto it = inScalarData->begin(); it != inScalarData->end(); it++){
             //skalowanie
-            outScalarData->addPoint( (*it).value * scale);
+            outScalarData->addPoint( (*it).second * scale);
         }
 
         //normalizacja, niezbedna do pracy wizualizatorów
         //teraz wymagana, potem to uproœcimy
-        outScalarData->normalize();
+        //outScalarData->normalize();
 
         //zapisujê zmodyfikowane dane do udostêpniena
         outScalars.addObject(outScalarData);
@@ -65,7 +65,7 @@ void ExampleScalarChannelProcessor::getInputInfo(std::vector<InputInfo>& info)
     //czy wejscie wymagane
     input.required = true;
     //identyfikator typu dancyh akceptowanych na wejsciu
-    input.type = typeid(core::ScalarChannel);
+    input.type = typeid(ScalarChannel);
     //czy dane beda modyfikowane
     input.modify = true;
 
@@ -82,7 +82,7 @@ void ExampleScalarChannelProcessor::getOutputInfo( std::vector<OutputInfo> & out
     //nazwa wyswietlana wyjscia
     info.name = "Scalar";
     //identyfikator typu danych oferowanych na wysjciu
-    info.type = typeid(core::ScalarChannel);
+    info.type = typeid(ScalarChannel);
 
     output.push_back(info);
 }
