@@ -24,14 +24,25 @@ public:
     public:
         IntSerie(QLineEdit * widget);
 
-    protected:
+    public:
 
-        virtual void setSerieName(const std::string & name);
+        //! \param name Nazwa serii danych do ustawienia
+        virtual void setName(const std::string & name);
 
-        virtual void setSerieData(const core::ObjectWrapperConstPtr & data);
+        //! \return Nazwa serii danych
+        virtual const std::string & getName() const;
+
+        //! \param data Dane do ustawienia w serii danych. ObjecWrappery pozwalaj¹ nam unikn¹æ potrzeby generowania wielu metod dla ró¿nych argumentów.
+        //! Znacz¹co uprasza interfejs, w przeciwnym wypadku musielibyœmy skorzystaæ z template
+        virtual void setData(const core::ObjectWrapperConstPtr & data);
+
+        //! \return Dane serii
+        virtual const core::ObjectWrapperConstPtr & getData() const;
 
     public:
         QLineEdit * widget;
+        core::ObjectWrapperConstPtr data;
+        std::string name;
     };
 
 public:
@@ -61,6 +72,8 @@ public:
 
     //! \return Seria danych ktora mozna ustawiac - nazwa i dane, nie zarzadza ta seria danych - czasem jej zycia, my zwalniamy jej zasoby!!
     virtual core::IVisualizer::SerieBase* createSerie(const core::ObjectWrapperConstPtr & data, const std::string & name = std::string());
+
+    virtual core::IVisualizer::SerieBase* createSerie(const core::IVisualizer::SerieBase* serie);
 
     //! \param serie Seria danych do usuniêcia, nie powinien usuwac tej serii! Zarzadzamy nia my!!
     virtual void removeSerie(core::IVisualizer::SerieBase* serie);

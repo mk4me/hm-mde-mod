@@ -14,7 +14,7 @@ core::IParser* ExampleIntParser::create()
     return new ExampleIntParser();
 }
 
-void ExampleIntParser::parseFile(core::IDataManager* dataManager, const core::Filesystem::Path& path)
+void ExampleIntParser::parseFile(const core::Filesystem::Path& path)
 {
     using boost::lexical_cast;
     using boost::bad_lexical_cast;
@@ -63,12 +63,17 @@ void ExampleIntParser::parseFile(core::IDataManager* dataManager, const core::Fi
     adapter->set(ints);
 }
 
-std::string ExampleIntParser::getSupportedExtensions() const
+void ExampleIntParser::getSupportedExtensions(core::IParser::Extensions & extensions) const
 {
-    return "csv";
+    core::IParser::ExtensionDescription extDesc;
+    extDesc.description = "CSV format";
+
+    extDesc.types.insert(typeid(Ints));
+
+    extensions["csv"] = extDesc;
 }
 
-void ExampleIntParser::getObjects(std::vector<core::ObjectWrapperPtr>& objects)
+void ExampleIntParser::getObjects(core::Objects& objects)
 {
-    objects.push_back(adapter);
+    objects.insert(adapter);
 }

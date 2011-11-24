@@ -28,9 +28,9 @@ public:
     UNIQUE_ID("{55D3B9E4-1759-4BFE-B9CF-D5C25155D442}", "Sample parser");
     
 public:
-    SampleParser()
+    SampleParser() : object(core::ObjectWrapper::create<std::string>())
     {
-        object = core::ObjectWrapper::create<std::string>();
+        
     }
 
     virtual IParser* create()
@@ -38,7 +38,7 @@ public:
         return new SampleParser();
     }
 
-    virtual void parseFile(IDataManager* dataManager, const boost::filesystem::path& path)
+    virtual void parseFile(const core::Filesystem::Path& path)
     {
         std::ostringstream contents;
         std::ifstream file(path.string());
@@ -54,15 +54,24 @@ public:
         object->setName( path.filename().string() );
         object->setSource( path.string() );
     }
-    
-    virtual std::string getSupportedExtensions() const
+
+    virtual void getSupportedExtensions(core::IParser::Extensions & extensions) const
     {
-        return "*.c3d;*.avi";
+        core::IParser::ExtensionDescription extDesc;
+        extDesc.description = "C3D format";
+
+        extDesc.types.insert(typeid(std::string));
+
+        extensions["c3d"] = extDesc;
+
+        extDesc.description = "AVI format";
+
+        extensions["avi"] = extDesc;
     }
     
-    virtual void getObjects(std::vector<ObjectWrapperPtr>& objects)
+    virtual void getObjects(core::Objects& objects)
     {
-        objects.push_back(object);
+        objects.insert(object);
     }
 };
 
@@ -89,20 +98,32 @@ public:
 		}
 
 	protected:
-		virtual void setSerieName(const std::string & name)
+		virtual void setName(const std::string & name)
 		{
-			//TODO
-			//obecnie nazwy serii nie sa obslugiwane ale musimy pomyslec o tym i ewentualnie dodac!!
+			this->name = name;
 		}
 
-		virtual void setSerieData(const core::ObjectWrapperConstPtr & data)
+        virtual const std::string & getName() const
+        {
+            return name;
+        }
+
+		virtual void setData(const core::ObjectWrapperConstPtr & data)
 		{
+            this->data = data;
 			boost::shared_ptr<const std::string> str = data->get();
 			visualizer->widget->setText( core::toString(*str) );
 		}
 
+        virtual const core::ObjectWrapperConstPtr & getData() const
+        {
+            return data;
+        }
+
 	private:
 		SampleVisualizer* visualizer;
+        std::string name;
+        core::ObjectWrapperConstPtr data;
 	};
 
     virtual IVisualizer* createClone() const
@@ -116,7 +137,13 @@ public:
         return name;
     }
 
-	core::IVisualizer::SerieBase *createSerie(const ObjectWrapperConstPtr & data, const std::string & name)
+    virtual core::IVisualizer::SerieBase *createSerie(const core::IVisualizer::SerieBase *)
+    {
+        throw std::runtime_error("Not implemented");
+        return nullptr;
+    }
+
+	virtual core::IVisualizer::SerieBase *createSerie(const ObjectWrapperConstPtr & data, const std::string & name)
 	{
 		core::IVisualizer::SerieBase * ret = new SampleVisualizerSerie(this);
 		ret->setName(name);

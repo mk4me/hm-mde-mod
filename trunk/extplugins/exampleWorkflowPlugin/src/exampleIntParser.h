@@ -10,11 +10,11 @@ public:
 
     virtual IParser* create();
     
-    virtual void parseFile(core::IDataManager* dataManager, const boost::filesystem::path& path);
+    virtual void parseFile(const core::Filesystem::Path& path);
     
-    virtual std::string getSupportedExtensions() const;
+    virtual void getSupportedExtensions(core::IParser::Extensions & extensions) const;
 
-    virtual void getObjects(std::vector<core::ObjectWrapperPtr>& objects);
+    virtual void getObjects(core::Objects & objects);
 
 private:
 

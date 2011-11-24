@@ -5,16 +5,16 @@
 #include <c3dlib/c3dparser.h>
 #include <c3dMarkers/include/C3DMarkersChannels.h>
 
-C3DMarkersParser::C3DMarkersParser()
+C3DMarkersParser::C3DMarkersParser() : allmarkerCollection(core::ObjectWrapper::create<AllMarkersCollection>())
 {
-	allmarkerCollection = core::ObjectWrapper::create<AllMarkersCollection>();
+	
 }
 
 C3DMarkersParser::~C3DMarkersParser()
 {
 }
 
-void C3DMarkersParser::parseFile( core::IDataManager* dataManager, const core::Filesystem::Path& path )
+void C3DMarkersParser::parseFile(const core::Filesystem::Path& path )
 {
 	core::shared_ptr<c3dlib::C3DParser> parser(new c3dlib::C3DParser());
     
@@ -37,14 +37,19 @@ core::IParser* C3DMarkersParser::create()
     return new C3DMarkersParser();
 }
 
-std::string C3DMarkersParser::getSupportedExtensions() const
+void C3DMarkersParser::getSupportedExtensions(core::IParser::Extensions & extensions) const
 {
-    return "c3d";
+    core::IParser::ExtensionDescription extDesc;
+    extDesc.description = "C3D format";
+
+    extDesc.types.insert(typeid(AllMarkersCollection));
+
+    extensions["c3d"] = extDesc;
 }
 
-void C3DMarkersParser::getObjects( std::vector<core::ObjectWrapperPtr>& objects )
+void C3DMarkersParser::getObjects( core::Objects& objects )
 {
-	objects.push_back(allmarkerCollection);
+	objects.insert(allmarkerCollection);
 }
 
 void C3DMarkersParser::saveFile( const core::Filesystem::Path& path )

@@ -63,6 +63,12 @@ core::IVisualizer::SerieBase* ExampleIntVisualizer::createSerie(const core::Obje
     return serie;
 }
 
+core::IVisualizer::SerieBase* ExampleIntVisualizer::createSerie(const core::IVisualizer::SerieBase* serie)
+{
+    throw std::runtime_error("Not implemented");
+    return nullptr;
+}
+
 void ExampleIntVisualizer::removeSerie(core::IVisualizer::SerieBase* serie)
 {
     IntSerie * s = dynamic_cast<IntSerie*>(serie);
@@ -80,13 +86,14 @@ ExampleIntVisualizer::IntSerie::IntSerie(QLineEdit * widget) : widget(widget)
 
 }
 
-void ExampleIntVisualizer::IntSerie::setSerieName(const std::string & name)
+void ExampleIntVisualizer::IntSerie::setName(const std::string & name)
 {
-
+    this->name = name;
 }
 
-void ExampleIntVisualizer::IntSerie::setSerieData(const core::ObjectWrapperConstPtr & data)
+void ExampleIntVisualizer::IntSerie::setData(const core::ObjectWrapperConstPtr & data)
 {
+    this->data = data;
     IntsConstPtr ints = data->get();
 
     QString text("Empty serie");
@@ -102,4 +109,14 @@ void ExampleIntVisualizer::IntSerie::setSerieData(const core::ObjectWrapperConst
 
     widget->setText(text);
 
+}
+
+const std::string & ExampleIntVisualizer::IntSerie::getName() const
+{
+    return name;
+}
+
+const core::ObjectWrapperConstPtr & ExampleIntVisualizer::IntSerie::getData() const
+{
+    return data;
 }
