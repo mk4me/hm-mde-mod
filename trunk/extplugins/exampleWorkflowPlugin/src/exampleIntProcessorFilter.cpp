@@ -36,6 +36,8 @@ void ExampleIntProccesorFilter::process(core::IObjectSource* input, core::IObjec
     }
     
     for(int i = 0; i < inInts.size(); i++){
+        std::stringstream newName;
+        newName << "Filtered " << i;
         IntsConstPtr vals = inInts.getObject(i);
         IntsPtr ints(new Ints());
 
@@ -45,7 +47,7 @@ void ExampleIntProccesorFilter::process(core::IObjectSource* input, core::IObjec
             }
         }
 
-        outInts.addObject(ints);
+        outInts.addObject(ints, newName.str(), typeid(ExampleIntProccesorFilter).name());
     }
 }
 

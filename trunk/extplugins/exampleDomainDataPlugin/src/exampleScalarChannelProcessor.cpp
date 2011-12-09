@@ -35,9 +35,13 @@ void ExampleScalarChannelProcessor::process(core::IObjectSource* input, core::IO
         //przetwarzam dane wejsciowe
         //pobieram jeden element danych wejsciowych
         ScalarChannelConstPtr inScalarData = inScalars.getObject(i);
+        
+        std::stringstream newName;
+        newName << inScalarData->getName() << " - Scaled[" << scale < "]";
+        
         //kopiuje go - przygotowuje sobie porcje danych wyjsciowych
         ScalarChannelPtr outScalarData(new ScalarChannel(inScalarData->getSamplesPerSecond()));
-        outScalarData->setName(inScalarData->getName());
+        outScalarData->setName(newName.str());
         outScalarData->setTimeBaseUnit(inScalarData->getTimeBaseUnit());
         outScalarData->setValueBaseUnit(inScalarData->getValueBaseUnit());
 
@@ -47,12 +51,8 @@ void ExampleScalarChannelProcessor::process(core::IObjectSource* input, core::IO
             outScalarData->addPoint( (*it).second * scale);
         }
 
-        //normalizacja, niezbedna do pracy wizualizatorów
-        //teraz wymagana, potem to uproœcimy
-        //outScalarData->normalize();
-
         //zapisujê zmodyfikowane dane do udostêpniena
-        outScalars.addObject(outScalarData);
+        outScalars.addObject(outScalarData, outScalarData->getName(), typeid(ExampleScalarChannelProcessor).name());
     }
 }
 

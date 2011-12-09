@@ -23,6 +23,8 @@ void ExampleIntProccesorStatistic::process(core::IObjectSource* input, core::IOb
     }
 
     for(int i = 0; i < inInts.size(); i++){
+        std::stringstream newName;
+        newName << "Statistics " << i;
         IntsConstPtr vals = inInts.getObject(i);
         ExampleIntStatisticsPtr stats(new ExampleIntStatistics());
 
@@ -30,7 +32,7 @@ void ExampleIntProccesorStatistic::process(core::IObjectSource* input, core::IOb
             stats->addSample(*it);
         }
 
-        outInts.addObject(stats);
+        outInts.addObject(stats, newName.str(), typeid(ExampleIntProccesorStatistic).name());
     }
 }
 

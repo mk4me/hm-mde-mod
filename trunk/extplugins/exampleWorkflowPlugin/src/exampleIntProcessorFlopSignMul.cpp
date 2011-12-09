@@ -26,6 +26,10 @@ void ExampleIntProccesorFlopSignMul::process(core::IObjectSource* input, core::I
     int maxIndex = min(inIntsA.size(), inIntsB.size());
 
     for(int i = 0; i < maxIndex; i++){
+
+        std::stringstream newName;
+        newName << "Flop Sign " << i;
+
         IntsConstPtr valsA = inIntsA.getObject(i);
         IntsConstPtr valsB = inIntsB.getObject(i);
         
@@ -47,7 +51,7 @@ void ExampleIntProccesorFlopSignMul::process(core::IObjectSource* input, core::I
             outVals->push_back(val);
         }
 
-        outInts.addObject(outVals);
+        outInts.addObject(outVals, newName.str(), typeid(ExampleIntProccesorFlopSignMul).name());
     }
 }
 
