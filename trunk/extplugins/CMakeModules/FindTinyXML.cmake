@@ -2,7 +2,7 @@
 FIND_INIT(TINYXML tinyxml)
 
 # szukanie
-FIND_STATIC_EXT(TINYXML "tinyxmlSTL" "tinyxmldSTL")
+FIND_STATIC(TINYXML "tinyxmlSTL")
 
 # koniec
 FIND_FINISH(TINYXML)

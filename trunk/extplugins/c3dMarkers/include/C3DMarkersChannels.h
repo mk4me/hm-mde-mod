@@ -16,7 +16,7 @@
 #include <core/ObjectWrapper.h>
 #include <osg/Vec3>
 #include <osg/Math>
-#include <plugins/c3d/C3DChannels.h>
+#include <plugins/c3d/C3DCollections.h>
 #include <c3dlib/C3DParser.h>
 
 class AllMarkersCollection : public MarkerCollection

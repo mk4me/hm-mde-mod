@@ -1,7 +1,6 @@
 # przygotowanie do szukania
 FIND_INIT(CURL curl)
 
-
 # szukanie
 FIND_SHARED(CURL_LIBCURL "libcurl" "libcurl")
 if (CMAKE_HOST_WIN32)

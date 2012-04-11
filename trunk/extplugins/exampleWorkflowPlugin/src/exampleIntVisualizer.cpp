@@ -28,7 +28,7 @@ void ExampleIntVisualizer::update(double deltaTime)
 
 }
 
-QWidget* ExampleIntVisualizer::createWidget(std::vector<QObject*>& actions)
+QWidget* ExampleIntVisualizer::createWidget(core::IActionsGroupManager * actionsGroup)
 {
     widget = new QWidget();
     QVBoxLayout * layout = new QVBoxLayout();
@@ -38,8 +38,12 @@ QWidget* ExampleIntVisualizer::createWidget(std::vector<QObject*>& actions)
 
 QIcon* ExampleIntVisualizer::createIcon()
 {
-    //return new QIcon(getPluginResourceString("icons/ints.png"));
-    return nullptr;
+	return nullptr;
+}
+
+QPixmap ExampleIntVisualizer::print() const
+{
+	return QPixmap::grabWidget(widget);
 }
 
 void ExampleIntVisualizer::setUp(core::IObjectSource* source)

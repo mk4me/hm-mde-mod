@@ -20,6 +20,9 @@ function(procedural_create_vcproj_userfile TARGETNAME WORKING_DIR)
 # Inicjuje proces wyszukiwania biblioteki.
 macro(ON_PROJECT_ADDED name)
 
+	# ustawiamy nazwe dla artefaktow wersji debug tak aby do nazwy na koniec by³o doklejane d, dla release bez zmian
+	set_target_properties(${TARGET_TARGETNAME} PROPERTIES DEBUG_POSTFIX "d")
+
 	# flaga aby mozna bylo uzyc projektu w makrach
 	set(${name}_FOUND 1 PARENT_SCOPE)
 	# kopiujemy includy

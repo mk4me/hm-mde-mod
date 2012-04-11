@@ -160,7 +160,7 @@ public:
 		widget->setText("serie removed");
 	}
 
-    virtual QWidget* createWidget(std::vector<QObject*>& actions)
+    virtual QWidget* createWidget(core::IActionsGroupManager * actionsGroup)
     {
         widget.reset(new QLabel(nullptr));
         widget->setText("widget created");
@@ -168,10 +168,15 @@ public:
         return widget.get();
     }
 
-    virtual QIcon* createIcon()
-    {
-        return nullptr;
-    }
+	virtual QIcon* createIcon()
+	{
+		return nullptr;
+	}
+
+	virtual QPixmap print() const
+	{
+		return QPixmap::grabWidget(widget.get());
+	}
 
 	virtual int getMaxDataSeries(void) const
 	{

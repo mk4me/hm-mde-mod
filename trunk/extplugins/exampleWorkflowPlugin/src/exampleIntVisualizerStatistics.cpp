@@ -28,11 +28,12 @@ void ExampleIntVisualizerStatistics::update(double deltaTime)
 
 }
 
-QWidget* ExampleIntVisualizerStatistics::createWidget(std::vector<QObject*>& actions)
+QWidget* ExampleIntVisualizerStatistics::createWidget(core::IActionsGroupManager * actionsGroup)
 {
     QAction * shuffleAction = new QAction("Shuffle", nullptr);
     connect(shuffleAction, SIGNAL(triggered()), this, SLOT(shuffle()));
-    actions.push_back(shuffleAction);
+    auto groupID = actionsGroup->createGroup(tr("Operations"));
+	actionsGroup->addGroupAction(groupID, shuffleAction);
 
     widget = new QWidget();
     QVBoxLayout * layout = new QVBoxLayout();
@@ -42,8 +43,12 @@ QWidget* ExampleIntVisualizerStatistics::createWidget(std::vector<QObject*>& act
 
 QIcon* ExampleIntVisualizerStatistics::createIcon()
 {
-    //return new QIcon(getPluginResourceString("icons/ints.png"));
-    return nullptr;
+	return nullptr;
+}
+
+QPixmap ExampleIntVisualizerStatistics::print() const
+{
+	return QPixmap::grabWidget(widget);
 }
 
 void ExampleIntVisualizerStatistics::setUp(core::IObjectSource* source)

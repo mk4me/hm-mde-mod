@@ -60,9 +60,11 @@ public:
     //! \see IVisualizer::update
     virtual void update(double deltaTime);
     //! \see IVisualizer::createWidget
-    virtual QWidget* createWidget(std::vector<QObject*>& actions);
-    //! \see IVisualizer::createIcon
-    virtual QIcon* createIcon();
+	virtual QWidget* createWidget(core::IActionsGroupManager * actionsGroup);
+	//! \see IVisualizer::createIcon
+	virtual QIcon* createIcon();
+
+	virtual QPixmap print() const;
     //! \see IVisualizer::setUp
     virtual void setUp(core::IObjectSource* source);
 
