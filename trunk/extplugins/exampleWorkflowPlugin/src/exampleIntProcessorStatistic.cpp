@@ -1,4 +1,6 @@
 #include "PCH.h"
+#include <core/IObjectSource.h>
+#include <core/IObjectOutput.h>
 #include "exampleIntProcessorStatistic.h"
 
 ExampleIntProccesorStatistic* ExampleIntProccesorStatistic::createClone() const

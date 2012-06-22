@@ -2,7 +2,7 @@
 FIND_INIT(QWT qwt)
 
 # szukanie
-FIND_SHARED(QWT "qwt" "qwt")
+FIND_STATIC(QWT "qwt")
 
 set(QWT_CUSTOM_COMPILER_DEFINITIONS "/D \"QWT_DLL\"")
 

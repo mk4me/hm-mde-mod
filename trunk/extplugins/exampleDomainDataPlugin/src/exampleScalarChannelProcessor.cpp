@@ -1,5 +1,7 @@
 #include "exampleScalarChannelProcessor.h"
 #include "exampleScalarConfigurationWidget.h"
+#include <core/IObjectSource.h>
+#include <core/IObjectOutput.h>
 
 ExampleScalarChannelProcessor::ExampleScalarChannelProcessor(double scale) : scale(scale)
 {
@@ -37,7 +39,7 @@ void ExampleScalarChannelProcessor::process(core::IObjectSource* input, core::IO
         ScalarChannelConstPtr inScalarData = inScalars.getObject(i);
         
         std::stringstream newName;
-        newName << inScalarData->getName() << " - Scaled[" << scale < "]";
+        newName << inScalarData->getName() << " - Scaled[" << scale << "]";
         
         //kopiuje go - przygotowuje sobie porcje danych wyjsciowych
         ScalarChannelPtr outScalarData(new ScalarChannel(inScalarData->getSamplesPerSecond()));
@@ -46,9 +48,10 @@ void ExampleScalarChannelProcessor::process(core::IObjectSource* input, core::IO
         outScalarData->setValueBaseUnit(inScalarData->getValueBaseUnit());
 
         //modyfikuje dane ktore bêdê zaraz udostepnia³ na wyjœciu
-        for(auto it = inScalarData->begin(); it != inScalarData->end(); it++){
+        //for(auto it = inScalarData->begin(); it != inScalarData->end(); it++){
+        for(ScalarChannel::size_type i = 0; i < inScalarData->size(); ++i){
             //skalowanie
-            outScalarData->addPoint( (*it).second * scale);
+			outScalarData->addPoint( inScalarData->value(i) * scale);
         }
 
         //zapisujê zmodyfikowane dane do udostêpniena

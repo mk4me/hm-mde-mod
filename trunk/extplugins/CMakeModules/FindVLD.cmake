@@ -2,7 +2,7 @@
 FIND_INIT(VLD vld)
 
 # szukanie
-FIND_SHARED(VLD_LIBCORE "vld" "vld")
+FIND_STATIC(VLD_LIBCORE "vld")
 FIND_MODULE(VLD_DBGHELP "dbghelp")
 FIND_MODULE(VLD_MSVCR90 "msvcr90")
 

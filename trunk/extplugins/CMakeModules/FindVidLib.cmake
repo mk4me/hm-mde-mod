@@ -2,7 +2,7 @@
 FIND_INIT(VIDLIB vidlib)
 
 # szukanie
-FIND_SHARED(VIDLIB "vidlib" "vidlib")
+FIND_STATIC(VIDLIB "vidlib")
 
 # skopiowanie
 FIND_FINISH(VIDLIB)

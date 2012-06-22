@@ -1,5 +1,7 @@
 #include "PCH.h"
 #include "exampleIntProcessorFlopSignMul.h"
+#include <core/IObjectSource.h>
+#include <core/IObjectOutput.h>
 
 ExampleIntProccesorFlopSignMul* ExampleIntProccesorFlopSignMul::createClone() const
 {

@@ -19,7 +19,7 @@
 
 
 //! parser wczytuje plik c3d i zwraca obiekt typu AllMarkersCollection (zawiera wszystkie markery zawarte w pliku)
-class C3DMarkersParser : public core::IParser, utils::GeneralDataChannelTimeAccessor<osg::Vec3f, float>
+class C3DMarkersParser : public core::IParser//, utils::GeneralDataChannelTimeAccessor<osg::Vec3f, float>
 {
     UNIQUE_ID("{B6E91A06-A22B-4FB1-839D-7764645BAE27}", "C3DMarkersParser");
 private:

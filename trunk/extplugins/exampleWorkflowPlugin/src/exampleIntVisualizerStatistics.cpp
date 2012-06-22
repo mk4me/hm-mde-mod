@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "exampleIntVisualizerStatistics.h"
+#include <core/IActionsGroupManager.h>
 
 const std::string& ExampleIntVisualizerStatistics::getName() const
 {

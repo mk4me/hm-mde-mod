@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "exampleIntProcessorFilter.h"
 #include "exampleIntWidgetProcessorFilterConfiguration.h"
+#include <core/IObjectSource.h>
+#include <core/IObjectOutput.h>
 
 ExampleIntProccesorFilter::ExampleIntProccesorFilter(const DataFilter & dataFilter)
     : dataFilter(dataFilter)
