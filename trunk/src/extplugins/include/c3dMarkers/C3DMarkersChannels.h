@@ -10,10 +10,10 @@
 #ifndef HEADER_GUARD_C3DMARKERS__C3DCHANNELS_H__
 #define HEADER_GUARD_C3DMARKERS__C3DCHANNELS_H__
 
-#include <core/SmartPtr.h>
+#include <corelib/SmartPtr.h>
 #include <utils/DataChannel.h>
 #include <utils/DataChannelCollection.h>
-#include <core/ObjectWrapper.h>
+#include <utils/ObjectWrapper.h>
 #include <osg/Vec3>
 #include <osg/Math>
 #include <plugins/c3d/C3DCollections.h>
@@ -24,7 +24,7 @@ class AllMarkersCollection : public MarkerCollection
 typedef boost::shared_ptr<AllMarkersCollection> AllMarkersCollectionPtr;
 typedef boost::shared_ptr<const AllMarkersCollection> AllMarkersCollectionConstPtr;
 
-CORE_DEFINE_WRAPPER(AllMarkersCollection, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+DEFINE_WRAPPER(AllMarkersCollection, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
 
 #endif
 

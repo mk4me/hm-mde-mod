@@ -9,81 +9,59 @@
 #ifndef HEADER_GUARD___EXAMPLEINTVISUALIZER_H__
 #define HEADER_GUARD___EXAMPLEINTVISUALIZER_H__
 
-#include <core/IVisualizer.h>
+#include <corelib/IVisualizer.h>
 
 class QLineEdit;
 
-class ExampleIntVisualizer : public core::IVisualizer
+class ExampleIntVisualizer : public plugin::IVisualizer
 {
-    UNIQUE_ID("{82978BE1-6G5F-4CE8-9CCE-302F82256A20}", "ExampleIntVisualizer");
+    UNIQUE_ID("{82978BE1-6G5F-4CE8-9CCE-302F82256A20}");
+	CLASS_DESCRIPTION("Example Int Visualizer", "Example Int Visualizer");
 
 public:
 
-    class IntSerie : public core::IVisualizer::SerieBase
+    class IntSerie : public plugin::IVisualizer::ISerie
     {
+		friend class ExampleIntVisualizer;
     public:
         IntSerie(QLineEdit * widget);
 
     public:
+		virtual void setName(const std::string & name);
+		virtual const std::string getName() const;
+		virtual void setData(const core::TypeInfo & requestedDataType, const core::ObjectWrapperConstPtr & data);
+		virtual void update();
+		virtual const core::ObjectWrapperConstPtr & getData() const;
+		virtual const core::TypeInfo & getRequestedDataType() const;
 
-        //! \param name Nazwa serii danych do ustawienia
-        virtual void setName(const std::string & name);
-
-        //! \return Nazwa serii danych
-        virtual const std::string & getName() const;
-
-        //! \param data Dane do ustawienia w serii danych. ObjecWrappery pozwalaj¹ nam unikn¹æ potrzeby generowania wielu metod dla ró¿nych argumentów.
-        //! Znacz¹co uprasza interfejs, w przeciwnym wypadku musielibyœmy skorzystaæ z template
-        virtual void setData(const core::ObjectWrapperConstPtr & data);
-
-        //! \return Dane serii
-        virtual const core::ObjectWrapperConstPtr & getData() const;
-
-    public:
+    private:
         QLineEdit * widget;
         core::ObjectWrapperConstPtr data;
         std::string name;
+		utils::TypeInfo requestedType;
     };
 
 public:
     //!    
-    ExampleIntVisualizer() {};
+    ExampleIntVisualizer();;
     //!
     virtual ~ExampleIntVisualizer() {};
-
-public:
-    //! \see IVisualizer::getName
-    virtual const std::string& getName() const;
-    //! \see IVisualizer::create
-    virtual core::IVisualizer* createClone() const;
-    //! \see IVisualizer::getSlotInfo
-    virtual void getInputInfo(std::vector<core::IInputDescription::InputInfo>& info);
-    //! Nic nie robi.
-    //! \see IVisualizer::update
-    virtual void update(double deltaTime);
-    //! \see IVisualizer::createWidget
-    virtual QWidget* createWidget(core::IActionsGroupManager * actionsGroup);
-    //! \see IVisualizer::createIcon
-    virtual QIcon* createIcon();
-
-	virtual QPixmap print() const;
-    //! \see IVisualizer::setUp
-    virtual void setUp(core::IObjectSource* source);
-
-    virtual int getMaxDataSeries() const;
-
-    //! \return Seria danych ktora mozna ustawiac - nazwa i dane, nie zarzadza ta seria danych - czasem jej zycia, my zwalniamy jej zasoby!!
-    virtual core::IVisualizer::SerieBase* createSerie(const core::ObjectWrapperConstPtr & data, const std::string & name = std::string());
-
-    virtual core::IVisualizer::SerieBase* createSerie(const core::IVisualizer::SerieBase* serie);
-
-    //! \param serie Seria danych do usuniêcia, nie powinien usuwac tej serii! Zarzadzamy nia my!!
-    virtual void removeSerie(core::IVisualizer::SerieBase* serie);
-
-    virtual void reset();
+	virtual plugin::IVisualizer * create() const;
+	virtual QWidget* createWidget();
+	virtual QIcon* createIcon();
+	virtual QPixmap takeScreenshot() const;
+	virtual void update( double deltaTime );
+	virtual ISerie* createSerie( const ISerie* serie );
+	virtual ISerie* createSerie(const core::TypeInfo & requestedType, const core::ObjectWrapperConstPtr & data);
+	virtual void removeSerie( ISerie* serie );
+	virtual void setActiveSerie( ISerie * serie );
+	virtual const plugin::IVisualizer::ISerie * getActiveSerie() const;
+	virtual void getSupportedTypes( core::TypeInfoList & supportedTypes ) const;
+	virtual int getMaxDataSeries() const;
 
 private:
     QWidget * widget;
+	plugin::IVisualizer::ISerie* activeSerie;
 };
 
 #endif  //  HEADER_GUARD___EXAMPLEINTVISUALIZER_H__

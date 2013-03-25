@@ -21,10 +21,9 @@
 #include <boost/accumulators/statistics/skewness.hpp>
 #include <boost/accumulators/statistics/median.hpp>
 #include <boost/type_traits.hpp>
+#include <corelib/SmartPtr.h>
 
-
-using namespace boost::accumulators;
-
+namespace acc = boost::accumulators;
 
 template<class T>
 class ExampleStatistics
@@ -32,15 +31,12 @@ class ExampleStatistics
     UTILS_STATIC_ASSERT((boost::is_arithmetic<T>::value), "Template class must be arithmetic type! For custom types propose custom statistic class");
 
 public:
-
     ExampleStatistics()
     {
-
     }
 
     ExampleStatistics(const ExampleStatistics & statistics) : accumulator(statistics.accumulator)
     {
-
     }
 
     void addSample(T sample)
@@ -50,42 +46,42 @@ public:
 
     T getMean() const
     {
-        return mean(accumulator);
+        return acc::mean(accumulator);
     }
 
     T getSecondMoment(int order) const
     {
-        return moment<2>(accumulator);
+        return acc::moment<2>(accumulator);
     }
 
     T getKurtosis() const
     {
-        return kurtosis(accumulator);
+        return acc::kurtosis(accumulator);
     }
 
     T getMax() const
     {
-        return max(accumulator);
+        return (acc::max)(accumulator);
     }
 
     T getMin() const
     {
-        return min(accumulator);
+        return (acc::min)(accumulator);
     }
 
     T getMedian() const
     {
-        return median(accumulator);
+        return acc::median(accumulator);
     }
 
     T getSkewness() const
     {
-        return skewness(accumulator);
+        return acc::skewness(accumulator);
     }
 
 private:
-    accumulator_set<T, stats<tag::mean, tag::moment<2>,
-        tag::kurtosis, tag::max, tag::min, tag::median, tag::skewness> > accumulator;
+    acc::accumulator_set<T, acc::stats<acc::tag::mean, acc::tag::moment<2>,
+        acc::tag::kurtosis, acc::tag::max, acc::tag::min, acc::tag::median, acc::tag::skewness> > accumulator;
 };
 
 typedef ExampleStatistics<int> ExampleIntStatistics;

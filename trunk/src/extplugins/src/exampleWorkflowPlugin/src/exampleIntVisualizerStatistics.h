@@ -9,82 +9,66 @@
 #ifndef HEADER_GUARD___EXAMPLEINTVISUALIZERSTATISTICS_H__
 #define HEADER_GUARD___EXAMPLEINTVISUALIZERSTATISTICS_H__
 
-#include <core/IVisualizer.h>
+#include <corelib/IVisualizer.h>
 #include <QtCore/QObject>
 
 class QLineEdit;
 
-class ExampleIntVisualizerStatistics : public QObject, public core::IVisualizer
+class ExampleIntVisualizerStatistics : public QObject, public plugin::IVisualizer
 {
     Q_OBJECT;
 
-    UNIQUE_ID("{82978BE1-6G5F-4C08-9CCE-302F82256A20}", "ExampleIntVisualizerStatistics");
+    UNIQUE_ID("{82978BE1-6G5F-4C08-9CCE-302F82256A20}");
+	CLASS_DESCRIPTION("Example Int Visualizer Statistics", "Example Int Visualizer Statistics")
 
 public:
-
-    class StatsSerie : public core::IVisualizer::SerieBase
+    class StatsSerie : public plugin::IVisualizer::ISerie
     {
+		friend class ExampleIntVisualizerStatistics;
     public:
         StatsSerie(QLineEdit * widget);
 
     public:
+		virtual void setName(const std::string & name);
+		virtual const std::string getName() const;
+		virtual void setData(const core::TypeInfo & requestedDataType, const core::ObjectWrapperConstPtr & data);
+		virtual void update();
+		virtual const core::ObjectWrapperConstPtr & getData() const;
+		virtual const core::TypeInfo & getRequestedDataType() const;
 
-        virtual void setName(const std::string & name);
-
-        virtual void setData(const core::ObjectWrapperConstPtr & data);
-
-        virtual const std::string & getName() const;
-
-        virtual const core::ObjectWrapperConstPtr & getData() const;
-
-    public:
-        QLineEdit * widget;
-        std::string name;
-        core::ObjectWrapperConstPtr data;
+	private:
+		QLineEdit * widget;
+		core::ObjectWrapperConstPtr data;
+		std::string name;
+		utils::TypeInfo requestedType;
     };
 
 public:
     //!    
-    ExampleIntVisualizerStatistics() {};
+    ExampleIntVisualizerStatistics();;
     //!
     virtual ~ExampleIntVisualizerStatistics() {};
 
 public:
-    //! \see IVisualizer::getName
-    virtual const std::string& getName() const;
-    //! \see IVisualizer::create
-    virtual core::IVisualizer* createClone() const;
-    //! \see IVisualizer::getSlotInfo
-    virtual void getInputInfo(std::vector<core::IInputDescription::InputInfo>& info);
-    //! Nic nie robi.
-    //! \see IVisualizer::update
-    virtual void update(double deltaTime);
-    //! \see IVisualizer::createWidget
-	virtual QWidget* createWidget(core::IActionsGroupManager * actionsGroup);
-	//! \see IVisualizer::createIcon
+	virtual plugin::IVisualizer * create() const;
+	virtual QWidget* createWidget();
 	virtual QIcon* createIcon();
-
-	virtual QPixmap print() const;
-    //! \see IVisualizer::setUp
-    virtual void setUp(core::IObjectSource* source);
-
-    virtual int getMaxDataSeries() const;
-
-    //! \return Seria danych ktora mozna ustawiac - nazwa i dane, nie zarzadza ta seria danych - czasem jej zycia, my zwalniamy jej zasoby!!
-    virtual core::IVisualizer::SerieBase* createSerie(const core::ObjectWrapperConstPtr & data, const std::string & name = std::string());
-
-    virtual core::IVisualizer::SerieBase* createSerie(const core::IVisualizer::SerieBase* serie);
-
-    //! \param serie Seria danych do usuniêcia, nie powinien usuwac tej serii! Zarzadzamy nia my!!
-    virtual void removeSerie(core::IVisualizer::SerieBase* serie);
-
-    virtual void reset();
+	virtual QPixmap takeScreenshot() const;
+	virtual void update( double deltaTime );
+	virtual plugin::IVisualizer::ISerie* createSerie( const ISerie* serie );
+	virtual plugin::IVisualizer::ISerie* createSerie(const core::TypeInfo & requestedType, const core::ObjectWrapperConstPtr & data);
+	virtual void removeSerie( ISerie* serie );
+	virtual void setActiveSerie( ISerie * serie );
+	virtual const plugin::IVisualizer::ISerie * getActiveSerie() const;
+	virtual void getSupportedTypes( core::TypeInfoList & supportedTypes ) const;
+	virtual int getMaxDataSeries() const;
 
 private slots:
-    void shuffle();
+	void shuffle();
 
 private:
-    QWidget * widget;
+	QWidget * widget;
+	plugin::IVisualizer::ISerie* activeSerie;
 };
 
 #endif  //  HEADER_GUARD___EXAMPLEINTVISUALIZERSTATISTICS_H__

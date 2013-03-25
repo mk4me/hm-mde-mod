@@ -10,20 +10,20 @@
 #ifndef HEADER_GUARD_C3DMARKERS__C3DPARSER_H__
 #define HEADER_GUARD_C3DMARKERS__C3DPARSER_H__
 
-#include <core/SmartPtr.h>
-#include <core/Filesystem.h>
-#include <core/IParser.h>
-#include <core/IDataManager.h>
+#include <corelib/SmartPtr.h>
+#include <corelib/Filesystem.h>
+#include <corelib/IParser.h>
 #include <c3dlib/C3DParser.h>
 #include <utils/DataChannel.h>
 
 
 //! parser wczytuje plik c3d i zwraca obiekt typu AllMarkersCollection (zawiera wszystkie markery zawarte w pliku)
-class C3DMarkersParser : public core::IParser//, utils::GeneralDataChannelTimeAccessor<osg::Vec3f, float>
+class C3DMarkersParser : public plugin::IParser, public plugin::ISourceParserCapabilities
 {
-    UNIQUE_ID("{B6E91A06-A22B-4FB1-839D-7764645BAE27}", "C3DMarkersParser");
+    UNIQUE_ID("{B6E91A06-A22B-4FB1-839D-7764645BAE27}")
+	CLASS_DESCRIPTION("C3DMarkersParser", "C3DMarkersParser");
 private:
-	core::ObjectWrapperPtr allmarkerCollection;
+	utils::ObjectWrapperPtr allmarkerCollection;
 	core::shared_ptr<c3dlib::C3DParser> parserPtr;
     	
 public:
@@ -31,11 +31,10 @@ public:
     virtual ~C3DMarkersParser();
 
 public:
-    virtual void parseFile(const core::Filesystem::Path& path);
-    virtual core::IParser* create();
-    virtual void getSupportedExtensions(core::IParser::Extensions & extensions) const;    
-    virtual void getObjects(core::Objects& objects);
-    void saveFile(const core::Filesystem::Path& path);
+	virtual void acceptedExpressions( Expressions & expressions ) const;
+	virtual plugin::IParser* create() const;
+	virtual void getObjects( core::Objects& objects );
+	virtual void parse( const std::string & source );
 };
 
 

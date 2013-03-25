@@ -11,29 +11,24 @@
 
 
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
-#include <core/IDataProcessor.h>
+#include <plugins/newVdf/INodeConfiguration.h>
+#include <dflib/Pin.h>
+#include <dflib/IDFPin.h>
+#include <dflib/IDFNode.h>
+#include <dflib/Node.h>
+#include "examplePins.h"
 
 
-class ExampleIntProccesorStatistic : public core::IDataProcessor
+class ExampleIntProccesorStatistic :  public df::ProcessingNode, public df::IDFProcessor
 {
-    UNIQUE_ID("{A4B67836-E8C8-4E07-A8D9-60E3089D2557}", "ExampleIntProccesorStatistic");
-
 public:
+	ExampleIntProccesorStatistic();
+	virtual void reset();
+	virtual void process();
 
-    virtual const std::string & getName() const;
-
-    virtual ExampleIntProccesorStatistic* createClone() const;
-
-    virtual void process(core::IObjectSource* input, core::IObjectOutput* output);
-
-    virtual void getInputInfo(std::vector<InputInfo>& info);
-
-    virtual void getOutputInfo( std::vector<OutputInfo> & output );
-
-    virtual QWidget* getConfigurationWidget();
-
-    virtual void reset();
-
+private:
+	ExampleIntInputPin * inPinA;
+	ExampleStatsOutputPin * outPinA;
 };
 
 #endif  //  HEADER_GUARD___EXAMPLEINTPROCESSORSTATISTIC_H__

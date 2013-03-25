@@ -9,14 +9,17 @@
 #ifndef HEADER_GUARD___PLUGIN_H__
 #define HEADER_GUARD___PLUGIN_H__
 
-#include <core/Plugin.h>
+#include <corelib/IPlugin.h>
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
+#include <plugins/newVdf/IDataFlowProvider.h>
 
 typedef std::vector<int> Ints;
 typedef core::shared_ptr<Ints> IntsPtr;
 typedef core::shared_ptr<const Ints> IntsConstPtr;
 
-CORE_DEFINE_WRAPPER(Ints, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
-CORE_DEFINE_WRAPPER(ExampleIntStatistics, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+DEFINE_WRAPPER(Ints, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+DEFINE_WRAPPER(ExampleIntStatistics, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+
+
 
 #endif  //  HEADER_GUARD___PLUGIN_H__

@@ -1,70 +1,30 @@
 #include "PCH.h"
-#include <core/IObjectSource.h>
-#include <core/IObjectOutput.h>
 #include "exampleIntProcessorStatistic.h"
 
-ExampleIntProccesorStatistic* ExampleIntProccesorStatistic::createClone() const
+ExampleIntProccesorStatistic::ExampleIntProccesorStatistic()
 {
-    return new ExampleIntProccesorStatistic();
+	inPinA = new ExampleIntInputPin(this);
+	outPinA = new ExampleStatsOutputPin(this);
+	addInputPin(inPinA);
+	addOutputPin(outPinA);
 }
 
-const std::string & ExampleIntProccesorStatistic::getName() const
+void ExampleIntProccesorStatistic::process()
 {
-    static const std::string name("ExampleIntProccesorStatistic");
-    return name;
-}
+	IntsConstPtr vals = inPinA->value();
+	if(vals->empty() == true)
+	{
+	    return;
+	}
 
-void ExampleIntProccesorStatistic::process(core::IObjectSource* input, core::IObjectOutput* output)
-{
-    auto inInts = input->getObjects(0);
-    auto outInts = output->getObjects(0);
-
-    if(inInts.empty() == true)
-    {
-        return;
-    }
-
-    for(int i = 0; i < inInts.size(); i++){
-        std::stringstream newName;
-        newName << "Statistics " << i;
-        IntsConstPtr vals = inInts.getObject(i);
-        ExampleIntStatisticsPtr stats(new ExampleIntStatistics());
-
-        for(auto it = vals->begin(); it != vals->end(); it++){
-            stats->addSample(*it);
-        }
-
-        outInts.addObject(stats, newName.str(), typeid(ExampleIntProccesorStatistic).name());
-    }
-}
-
-void ExampleIntProccesorStatistic::getInputInfo(std::vector<InputInfo>& info)
-{
-    InputInfo input;
-    input.name = "INT";
-    input.required = true;
-    input.modify = false;
-    input.type = typeid(Ints);
-
-    info.push_back(input);
-}
-
-void ExampleIntProccesorStatistic::getOutputInfo( std::vector<OutputInfo> & output )
-{
-    OutputInfo info;
-    info.name = "STATS";
-    info.dependentInput.insert(0);
-    info.type = typeid(ExampleIntStatistics);
-
-    output.push_back(info);
-}
-
-QWidget* ExampleIntProccesorStatistic::getConfigurationWidget()
-{
-    return nullptr;
+	ExampleIntStatisticsPtr stats(new ExampleIntStatistics());
+	for(auto it = vals->begin(); it != vals->end(); it++){
+	    stats->addSample(*it);
+	}
+	outPinA->value(stats);
 }
 
 void ExampleIntProccesorStatistic::reset()
 {
-
 }
+

@@ -42,29 +42,17 @@ void ExampleWidgetProcessorFilterConfiguration::radioChecked()
 
 void ExampleWidgetProcessorFilterConfiguration::saveFilter()
 {
-
     if(minFilter->isChecked() == true){
-        
         processor->setFilter(boost::bind(&ExampleWidgetProcessorFilterConfiguration::lessThan, _1, singleVal->value()));
-        
     }else if(equalFilter->isChecked() == true){
-        
         processor->setFilter(boost::bind(&ExampleWidgetProcessorFilterConfiguration::equalTo, _1, singleVal->value()));
-        
     }else if(differentFilter->isChecked() == true){
-        
         processor->setFilter(boost::bind(&ExampleWidgetProcessorFilterConfiguration::differentThan, _1, singleVal->value()));
-        
     }else if(maxFilter->isChecked() == true){
-
         processor->setFilter(boost::bind(&ExampleWidgetProcessorFilterConfiguration::moreThan, _1, singleVal->value()));
-
     }else if(inRangeFilter->isChecked() == true){
-        
         processor->setFilter(boost::bind(&ExampleWidgetProcessorFilterConfiguration::inRange, _1, minVal->value(), maxVal->value()));
-        
     }else if(outRangeFilter->isChecked() == true){
-
         processor->setFilter(boost::bind(&ExampleWidgetProcessorFilterConfiguration::outRange, _1, minVal->value(), maxVal->value()));
     }
 }

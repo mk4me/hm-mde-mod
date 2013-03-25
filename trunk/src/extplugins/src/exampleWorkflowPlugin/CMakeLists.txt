@@ -1,4 +1,4 @@
-BEGIN_PROJECT("dynamic")
+BEGIN_PLUGIN_PROJECT("dynamic")
 
 SET_PRIVATE_HEADERS (
 	Plugin.h
@@ -9,6 +9,7 @@ SET_PRIVATE_HEADERS (
 	exampleIntProcessorFlopSignMul.h
 	exampleIntVisualizer.h
 	exampleIntVisualizerStatistics.h
+	examplePins.h
 	PCH.h
 )
 
@@ -24,6 +25,7 @@ SET_SOURCE_FILES (
 	exampleIntWidgetProcessorFilterConfiguration.cpp
 	exampleIntProcessorFlopSignMul.cpp
 	exampleIntVisualizer.cpp
+	examplePins.cpp
 	exampleIntVisualizerStatistics.cpp
 	PCH.cpp
 )
@@ -42,4 +44,4 @@ SET_PRECOMPILED_HEADER(PCH.h PCH.cpp)
 
 GENERATE_PLUGIN_ARTIFACTS()
 
-END_PROJECT()
+END_PLUGIN_PROJECT()

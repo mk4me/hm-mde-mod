@@ -2,38 +2,36 @@
 #include <sstream>
 #include <fstream>
 #include "exampleIntParser.h"
+#include "Plugin.h"
 
 
-ExampleIntParser::ExampleIntParser() : adapter(core::ObjectWrapper::create<Ints>())
+ExampleIntParser::ExampleIntParser() :
+	adapter(core::ObjectWrapper::create<Ints>())
 {
-
 }
 
-core::IParser* ExampleIntParser::create()
+plugin::IParser* ExampleIntParser::create() const
 {
     return new ExampleIntParser();
 }
 
-void ExampleIntParser::parseFile(const core::Filesystem::Path& path)
+void ExampleIntParser::parse( const std::string & source )
 {
     using boost::lexical_cast;
     using boost::bad_lexical_cast;
 
     typedef boost::tokenizer<boost::char_separator<char> > Tokenizer;
 
-    std::ifstream inputFile(path.string());
+    std::ifstream inputFile(source);
 
     if(inputFile.is_open() == false){
-        LOG_INFO(std::string("Problem while reading file - could not open file: ") + path.string());
+        PLUGIN_LOG_INFO(std::string("Problem while reading file - could not open file: ") + source);
         return;
     }
 
     std::string line;
-
     bool possiblyHeader = true;
-
     IntsPtr ints(new Ints());
-
     while(inputFile.eof() == false){
         std::getline(inputFile, line);
 
@@ -49,7 +47,7 @@ void ExampleIntParser::parseFile(const core::Filesystem::Path& path)
                     possiblyHeader = false;
                     break;
                 }else{
-                    LOG_ERROR(std::string("Error parsing int source file: ") + e.what());
+                    PLUGIN_LOG_ERROR(std::string("Error parsing int source file: ") + e.what());
                     return;
                 }
             }
@@ -63,17 +61,20 @@ void ExampleIntParser::parseFile(const core::Filesystem::Path& path)
     adapter->set(ints);
 }
 
-void ExampleIntParser::getSupportedExtensions(core::IParser::Extensions & extensions) const
-{
-    core::IParser::ExtensionDescription extDesc;
-    extDesc.description = "CSV format";
-
-    extDesc.types.insert(typeid(Ints));
-
-    extensions["csv"] = extDesc;
-}
 
 void ExampleIntParser::getObjects(core::Objects& objects)
 {
     objects.insert(adapter);
 }
+
+
+
+void ExampleIntParser::acceptedExpressions( Expressions & expressions ) const
+{
+	plugin::IParser::ExpressionDescription expDesc;
+	expDesc.description = "CSV format";
+	expDesc.types.insert(typeid(Ints));
+	expressions[".*\.csv$"] = expDesc;
+}
+
+

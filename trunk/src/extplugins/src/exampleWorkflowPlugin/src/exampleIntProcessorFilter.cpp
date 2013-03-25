@@ -1,77 +1,50 @@
 #include "PCH.h"
 #include "exampleIntProcessorFilter.h"
 #include "exampleIntWidgetProcessorFilterConfiguration.h"
-#include <core/IObjectSource.h>
-#include <core/IObjectOutput.h>
+
+void ExampleIntProccesorFilter::_ExampleIntProcessorFilter()
+{
+	inPinA = new ExampleIntInputPin(this);
+	outPinA = new ExampleIntOutputPin(this);
+	addInputPin(inPinA);
+	addOutputPin(outPinA);
+}
 
 ExampleIntProccesorFilter::ExampleIntProccesorFilter(const DataFilter & dataFilter)
     : dataFilter(dataFilter)
 {
     UTILS_ASSERT((dataFilter.empty() == false), "Bledny komparator!");
+	_ExampleIntProcessorFilter();
 }
 
 ExampleIntProccesorFilter::ExampleIntProccesorFilter(const ExampleIntProccesorFilter & processorFilter)
     : dataFilter(processorFilter.dataFilter)
 {
-
+	_ExampleIntProcessorFilter();
 }
 
-const std::string & ExampleIntProccesorFilter::getName() const
+
+void ExampleIntProccesorFilter::process()
 {
-    static const std::string name("ExampleIntProccesorFilter");
-    return name;
+	IntsConstPtr vals = inPinA->value();
+	IntsPtr ints(new Ints());
+	
+	for(auto it = vals->begin(); it != vals->end(); it++){
+	    if(dataFilter(*it) == true){
+	        ints->push_back(*it);
+	    }
+	}
+	
+	outPinA->value(ints);
 }
 
-ExampleIntProccesorFilter* ExampleIntProccesorFilter::createClone() const
+void ExampleIntProccesorFilter::reset()
 {
-    return new ExampleIntProccesorFilter(*this);
 }
 
-void ExampleIntProccesorFilter::process(core::IObjectSource* input, core::IObjectOutput* output)
+
+void ExampleIntProccesorFilter::refreshConfiguration()
 {
-    auto inInts = input->getObjects(0);
-    auto outInts = output->getObjects(0);
-
-    if(inInts.empty() == true)
-    {
-        return;
-    }
-    
-    for(int i = 0; i < inInts.size(); i++){
-        std::stringstream newName;
-        newName << "Filtered " << i;
-        IntsConstPtr vals = inInts.getObject(i);
-        IntsPtr ints(new Ints());
-
-        for(auto it = vals->begin(); it != vals->end(); it++){
-            if(dataFilter(*it) == true){
-                ints->push_back(*it);
-            }
-        }
-
-        outInts.addObject(ints, newName.str(), typeid(ExampleIntProccesorFilter).name());
-    }
-}
-
-void ExampleIntProccesorFilter::getInputInfo(std::vector<InputInfo>& info)
-{
-    InputInfo input;
-    input.required = true;
-    input.modify = false;
-    input.name = "INT";
-    input.type = typeid(Ints);
-
-    info.push_back(input);
-}
-
-void ExampleIntProccesorFilter::getOutputInfo( std::vector<OutputInfo> & output )
-{
-    OutputInfo info;
-    info.dependentInput.insert(0);
-    info.name = "INT";
-    info.type = typeid(Ints);
-
-    output.push_back(info);
 }
 
 QWidget* ExampleIntProccesorFilter::getConfigurationWidget()
@@ -96,9 +69,4 @@ bool ExampleIntProccesorFilter::nonZeroFilter(int val)
     }
 
     return false;
-}
-
-void ExampleIntProccesorFilter::reset()
-{
-
 }

@@ -1,4 +1,14 @@
-#include "Plugin.h"
+/********************************************************************
+	created:	2013/03/21
+	created:	21:3:2013   12:17
+	filename: 	PCH.h
+	author:		Wojciech Kniec
+	
+	purpose:	
+*********************************************************************/
+
+#ifndef HEADER_GUARD_EXAMPLE__PCH_H__
+#define HEADER_GUARD_EXAMPLE__PCH_H__
 
 #include <vector>
 #include <map>
@@ -9,54 +19,6 @@
 #include <stack>
 #include <iostream>
 #include <list>
-
-UTILS_PUSH_WARNINGS
-#include <osg/Node>
-#include <osg/AnimationPath>
-#include <osg/Config>
-#include <osg/Geode>
-#include <osg/Geometry>
-#include <osg/Group>
-#include <osg/Image>
-#include <osg/ImageStream>
-#include <osg/Node>
-#include <osg/NodeVisitor>
-#include <osg/Notify>
-#include <osg/observer_ptr>
-#include <osg/PositionAttitudeTransform>
-#include <osg/PrimitiveSet>
-#include <osg/Quat>
-#include <osg/ref_ptr>
-#include <osg/Referenced>
-#include <osg/ShapeDrawable>
-#include <osg/Timer>
-#include <osg/Vec3>
-#include <osg/Vec3d>
-
-#include <osgViewer/Viewer>
-#include <osgViewer/CompositeViewer>
-#include <osgViewer/ViewerEventHandlers>
-#include <osgViewer/GraphicsWindow>
-#include <osgViewer/ViewerEventHandlers>
-
-#include <osgGA/TrackballManipulator>
-#include <osgGA/FlightManipulator>
-#include <osgGA/DriveManipulator>
-#include <osgGA/KeySwitchMatrixManipulator>
-#include <osgGA/StateSetManipulator>
-#include <osgGA/AnimationPathManipulator>
-#include <osgGA/TerrainManipulator>
-
-#include <osgWidget/Widget>
-#include <osgWidget/Window>
-#include <osgWidget/Label>
-#include <osgWidget/Box>
-#include <osgWidget/Canvas>
-#include <osgWidget/Table>
-
-#include <osgDB/ReadFile>
-
-UTILS_POP_WARNINGS
 
 #include <QtGui/QDialog>
 #include <QtGui/QMessageBox>
@@ -76,3 +38,5 @@ UTILS_POP_WARNINGS
 #include <boost/iterator.hpp>
 
 #include <utils/Debug.h>
+
+#endif

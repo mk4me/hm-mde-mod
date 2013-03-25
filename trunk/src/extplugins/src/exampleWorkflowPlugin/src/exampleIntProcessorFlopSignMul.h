@@ -11,29 +11,24 @@
 
 
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
-#include <core/IDataProcessor.h>
+#include "Plugin.h"
+#include "examplePins.h"
 
 
-class ExampleIntProccesorFlopSignMul : public core::IDataProcessor
+class ExampleIntProccesorFlopSignMul : public df::ProcessingNode, public df::IDFProcessor
 {
-    UNIQUE_ID("{A4B67836-E8C8-4E07-A8D9-60E3089D2599}", "ExampleIntProccesorFlopSignMul");
+public:
+	ExampleIntProccesorFlopSignMul();
 
 public:
+	virtual void reset();
+	virtual void process();
 
-    virtual const std::string & getName() const;
-
-    virtual ExampleIntProccesorFlopSignMul* createClone() const;
-
-    virtual void process(core::IObjectSource* input, core::IObjectOutput* output);
-
-    virtual void getInputInfo(std::vector<InputInfo>& info);
-
-    virtual void getOutputInfo( std::vector<OutputInfo> & output );
-
-    virtual QWidget* getConfigurationWidget();
-
-    virtual void reset();
-
+private:
+	ExampleIntInputPin * inPinA;
+	ExampleIntInputPin * inPinB;
+	ExampleIntOutputPin * outPinA;
+	QWidget* widget;
 };
 
 #endif  //  HEADER_GUARD___EXAMPLEINTPROCESSORFLOPSIGNMUL_H__

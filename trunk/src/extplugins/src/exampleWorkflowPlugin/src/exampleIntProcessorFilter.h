@@ -10,38 +10,29 @@
 #define HEADER_GUARD___EXAMPLEINTPROCESSORFILTER_H__
 
 
-#include <core/IDataProcessor.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
+#include "exampleIntProcessorFlopSignMul.h"
+#include <plugins/newVdf/INodeConfiguration.h>
+#include <dflib/Pin.h>
+#include <dflib/IDFPin.h>
+#include <dflib/IDFNode.h>
+#include <dflib/Node.h>
 
-class ExampleIntProccesorFilter : public core::IDataProcessor
+class ExampleIntProccesorFilter : public df::ProcessingNode, public df::IDFProcessor, public vdf::INodeConfiguration
 {
-    UNIQUE_ID("{A4B67836-E8C8-4E07-A8D9-60E3089D2510}", "ExampleIntProccesorFilter");
-
 public:
     typedef boost::function<bool (int)> DataFilter;
 
 public:
-
     ExampleIntProccesorFilter(const DataFilter & comparator = boost::bind(&ExampleIntProccesorFilter::nonZeroFilter, _1));
-
     ExampleIntProccesorFilter(const ExampleIntProccesorFilter & processorFilter);
 
-    virtual const std::string & getName() const;
+private:
+	void _ExampleIntProcessorFilter();
 
-    virtual ExampleIntProccesorFilter* createClone() const;
-
-    virtual void process(core::IObjectSource* input, core::IObjectOutput* output);
-
-    virtual void getInputInfo(std::vector<InputInfo>& info);
-
-    virtual void getOutputInfo( std::vector<OutputInfo> & output );
-
-    virtual QWidget* getConfigurationWidget();
-
-    virtual void reset();
-
+public:
     void setFilter(const DataFilter & coparator);
     const DataFilter & getFilter() const;
 
@@ -49,9 +40,14 @@ public:
     int getReferenceValue() const;
 
     static bool nonZeroFilter(int val);
+	virtual void process();
+	virtual void reset();
+	virtual QWidget* getConfigurationWidget();
+	virtual void refreshConfiguration();
 
 private:
-
+	ExampleIntInputPin * inPinA;
+	ExampleIntOutputPin * outPinA;
     DataFilter dataFilter;
 };
 
