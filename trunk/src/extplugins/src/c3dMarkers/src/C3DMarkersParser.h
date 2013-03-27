@@ -10,7 +10,7 @@
 #ifndef HEADER_GUARD_C3DMARKERS__C3DPARSER_H__
 #define HEADER_GUARD_C3DMARKERS__C3DPARSER_H__
 
-#include <corelib/SmartPtr.h>
+#include <utils/SmartPtr.h>
 #include <corelib/Filesystem.h>
 #include <corelib/IParser.h>
 #include <c3dlib/C3DParser.h>

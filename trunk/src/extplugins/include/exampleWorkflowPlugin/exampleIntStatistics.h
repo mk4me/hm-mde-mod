@@ -21,7 +21,7 @@
 #include <boost/accumulators/statistics/skewness.hpp>
 #include <boost/accumulators/statistics/median.hpp>
 #include <boost/type_traits.hpp>
-#include <corelib/SmartPtr.h>
+#include <utils/SmartPtr.h>
 
 namespace acc = boost::accumulators;
 
@@ -86,7 +86,7 @@ private:
 
 typedef ExampleStatistics<int> ExampleIntStatistics;
 
-typedef core::shared_ptr<ExampleIntStatistics> ExampleIntStatisticsPtr;
-typedef core::shared_ptr<const ExampleIntStatistics> ExampleIntStatisticsConstPtr;
+typedef utils::shared_ptr<ExampleIntStatistics> ExampleIntStatisticsPtr;
+typedef utils::shared_ptr<const ExampleIntStatistics> ExampleIntStatisticsConstPtr;
 
 #endif  //  HEADER_GUARD___EXAMPLEINTSTATISTICS_H__

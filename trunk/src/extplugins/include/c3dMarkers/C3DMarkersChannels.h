@@ -10,7 +10,7 @@
 #ifndef HEADER_GUARD_C3DMARKERS__C3DCHANNELS_H__
 #define HEADER_GUARD_C3DMARKERS__C3DCHANNELS_H__
 
-#include <corelib/SmartPtr.h>
+#include <utils/SmartPtr.h>
 #include <utils/DataChannel.h>
 #include <utils/DataChannelCollection.h>
 #include <utils/ObjectWrapper.h>

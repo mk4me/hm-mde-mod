@@ -14,8 +14,8 @@
 #include <plugins/newVdf/IDataFlowProvider.h>
 
 typedef std::vector<int> Ints;
-typedef core::shared_ptr<Ints> IntsPtr;
-typedef core::shared_ptr<const Ints> IntsConstPtr;
+typedef utils::shared_ptr<Ints> IntsPtr;
+typedef utils::shared_ptr<const Ints> IntsConstPtr;
 
 DEFINE_WRAPPER(Ints, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
 DEFINE_WRAPPER(ExampleIntStatistics, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
