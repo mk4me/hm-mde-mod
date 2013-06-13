@@ -19,6 +19,4 @@ SET_UI_FILES(
 	exampleScalarConfigurationWidget.ui
 )
 
-GENERATE_PLUGIN_ARTIFACTS()
-
 END_PLUGIN_PROJECT()

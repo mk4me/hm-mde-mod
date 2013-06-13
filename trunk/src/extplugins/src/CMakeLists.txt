@@ -1,4 +1,4 @@
-ADD_PROJECT(plugin_plugin1 "CORELIB;CORE;BOOST;UTILS;OSG;QT;" "plugin1")
-ADD_PROJECT(plugin_exampleWorkflowPlugin "CORELIB;DFLIB;PLUGIN_VDF;BOOST;UTILS;OSG;QT;KINEMATICLIB;OSGUI;TINYXML" "exampleWorkflowPlugin")
-ADD_PROJECT(plugin_exampleDomainDataPlugin "CORELIB;DFLIB;PLUGIN_VDF;PLUGIN_C3D;CORE;BOOST;UTILS;OSG;QT;KINEMATICLIB;OSGUI;TINYXML;C3DLIB" "exampleDomainDataPlugin")
-ADD_PROJECT(plugin_c3dMarkers "CORELIB;PLUGIN_VDF;PLUGIN_C3D;CORE;BOOST;UTILS;OSG;KINEMATICLIB;TINYXML;QT;C3DLIB" "c3dMarkers")
+ADD_PROJECT(plugin_plugin1 "corelib;BOOST;utils;OSG;QT;" "plugin1")
+ADD_PROJECT(plugin_exampleWorkflowPlugin "corelib;dflib;plugin_newVdf;BOOST;utils;OSG;QT;kinematiclib;osgui;TINYXML" "exampleWorkflowPlugin")
+ADD_PROJECT(plugin_exampleDomainDataPlugin "corelib;dflib;plugin_newVdf;plugin_c3d;BOOST;utils;OSG;QT;kinematiclib;osgui;TINYXML;c3dlib" "exampleDomainDataPlugin")
+ADD_PROJECT(plugin_c3dMarkers "corelib;plugin_newVdf;plugin_c3d;BOOST;utils;OSG;kinematiclib;TINYXML;QT;c3dlib" "c3dMarkers")
