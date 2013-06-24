@@ -57,6 +57,36 @@ public:
 	}
 };
 
+
+IMU::IIMUOrietnationEstimator * createUKFEstimator(const float orientProcesNoise,
+	const float veloProcessNoise, const bool procNoiseOnes, const float gyroMeasNoise,
+	const float accMeasNoise, const float magMeasNoise, const bool measNoiseOnes)
+{
+	std::stringstream ss;
+	ss << "UKF_o" << orientProcesNoise << "_v" << veloProcessNoise << "_po" << procNoiseOnes << "_g"
+		<< gyroMeasNoise << "_a" << accMeasNoise << "_m" << magMeasNoise << "_mo" << measNoiseOnes;
+
+	//szum procesu - zak³adam 10 stopni na sekundê dla prêdkoœci k¹towych
+	// 2 stopnie na sekundê dla orientacji
+	MJ_UKF_OrientationEstimator::ProcessCovarianceMatrix processNoise = procNoiseOnes == true ? MJ_UKF_OrientationEstimator::ProcessCovarianceMatrix::Ones() : MJ_UKF_OrientationEstimator::ProcessCovarianceMatrix::Zero();
+
+	//orientacja
+	processNoise(0,0) = processNoise(1,1) = processNoise(2,2) = orientProcesNoise;
+	//prêdkoœæ k¹towa
+	processNoise(3,3) = processNoise(4,4) = processNoise(5,5) = veloProcessNoise;
+
+	MJ_UKF_OrientationEstimator::MeasurementCovarianceMatrix measurementNoise = measNoiseOnes == true ? MJ_UKF_OrientationEstimator::MeasurementCovarianceMatrix::Ones() : MJ_UKF_OrientationEstimator::MeasurementCovarianceMatrix::Zero();
+
+	//¿yroskop
+	measurementNoise(0,0) = measurementNoise(1,1) = measurementNoise(2,2) = gyroMeasNoise;	
+	//akcelerometr
+	measurementNoise(3,3) = measurementNoise(4,4) = measurementNoise(5,5) = accMeasNoise;
+	//magnetometr
+	measurementNoise(6,6) = measurementNoise(7,7) = measurementNoise(8,8) = magMeasNoise;
+
+	return new CustomNameMJ_UKF_OrientationEstimator(processNoise, measurementNoise, ss.str());
+}
+
 int main( int argc, char **argv )
 {
 
@@ -100,6 +130,8 @@ int main( int argc, char **argv )
 	//œrodowisko testowe z pustym przyk³adowym estymatorem
 	IMU::TestingFramework imuTest;
 
+
+	
 	//szum procesu - zak³adam 10 stopni na sekundê dla prêdkoœci k¹towych
 	// 2 stopnie na sekundê dla orientacji
 	MJ_UKF_OrientationEstimator::ProcessCovarianceMatrix processNoise = MJ_UKF_OrientationEstimator::ProcessCovarianceMatrix::Zero();
@@ -119,6 +151,33 @@ int main( int argc, char **argv )
 	measurementNoise(6,6) = measurementNoise(7,7) = measurementNoise(8,8) = 0.004;	
 
 	imuTest.registerEstimator(new MJ_UKF_OrientationEstimator(processNoise, measurementNoise));
+	
+	/*
+	float orientProcesNoise[5] = {0.002, 0.05, 0.5, 1.0, 5.0};
+	float veloProcessNoise[5] = {0.002, 0.05, 0.5, 1.0, 5.0};
+	bool ones[2] = {true, false};
+	float gyroMeasNoise[5] = {0.002, 0.05, 0.5, 1.0, 5.0};
+	float accMeasNoise[5] = {0.002, 0.05, 0.5, 1.0, 5.0};
+	float magMeasNoise[5] = {0.002, 0.05, 0.5, 1.0, 5.0};
+
+	for(int i = 0; i < 5; ++i){
+		for(int j = 0; j < 5; ++j){
+			for(int k = 0; k < 5; ++k){
+				for(int w = 0; w < 5; ++w){
+					for(int x = 0; x < 5; ++x){
+						//for(int a = 0; a < 2; ++a){
+							//for(int b = 0; b < 2; ++b){
+								imuTest.registerEstimator(createUKFEstimator(orientProcesNoise[i], veloProcessNoise[j],
+									true, gyroMeasNoise[k], accMeasNoise[w], magMeasNoise[x], true));
+							//}
+						//}
+					}
+				}
+			}
+		}
+	}
+	}*/
+
 
 	auto size = std::max(imuSamples.size(), orientationSamples.size());
 

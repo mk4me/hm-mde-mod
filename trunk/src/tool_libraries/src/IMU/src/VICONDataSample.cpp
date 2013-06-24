@@ -4,14 +4,14 @@
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
 #include <QuatUtils/QuatUtils.h>
-//#include <GeneralAlgorithms/CombinationGenerator/CombinationGenerator.h>
+#include <GeneralAlgorithms/CombinationGenerator/CombinationGenerator.h>
 
 using namespace IMU;
 
 //! Typ generatora kombinacji dla trójk¹tów
-//typedef GeneralAlgorithms::TCombinationGenerator<3,6> CGeneratorType;
+typedef GeneralAlgorithms::TCombinationGenerator<3,6> CGeneratorType;
 //! Typ agreguj¹cy kombinacje
-//typedef boost::array<CGeneratorType::Combination, CGeneratorType::total - 5> Combinations;
+typedef boost::array<CGeneratorType::Combination, CGeneratorType::total - 5> Combinations;
 
 VICONDataSample::VICONDataSample(TimeIDType timeID, const Vec3 & positionM1,	const Vec3 & positionM2,
 	const Vec3 & positionM3, const Vec3 & positionM4, const Vec3 & positionM5,
@@ -47,55 +47,56 @@ VICONDataSample::~VICONDataSample()
 }
 
 //generuje wszystkie trojkaty jakie moge utworzyæ, pomijam punkty wspo³liniowe
-//const Combinations generateCombinations()
-//{
-//	std::vector<CGeneratorType::Combination> ret;
-//	ret.reserve(Combinations::size());
-//
-//	//wszystkie kombinacje punktów na "ró¿d¿ce" w kszta³cie T
-//	CGeneratorType cg;
-//	while(cg.hasMore()){
-//		ret.push_back(cg.getNext());
-//	}
-//
-//	//usuwam punkty wspó³liniowe
-//	{
-//		CGeneratorType::Combination c;
-//		c[0] = 0;
-//		c[1] = 1;
-//		c[2] = 2;		
-//		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
-//
-//		c[2] = 3;
-//		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
-//
-//		c[1] = 2;
-//		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
-//
-//		c[0] = 1;		
-//		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
-//
-//		c[0] = 0;
-//		c[1] = 4;
-//		c[2] = 5;
-//		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
-//	}
-//
-//	Combinations retFinall;
-//	
-//	for(unsigned int i = 0; i < retFinall.size(); ++i){
-//		retFinall[i] = ret[i];
-//	}
-//
-//	return retFinall;
-//}
+const Combinations generateCombinations()
+{
+	std::vector<CGeneratorType::Combination> ret;
+	ret.reserve(Combinations::size());
 
-const VICONDataSample::Vec3 VICONDataSample::estimateOrientation(const VICONDataSample & viconSample)
+	//wszystkie kombinacje punktów na "ró¿d¿ce" w kszta³cie T
+	CGeneratorType cg;
+	while(cg.hasMore()){
+		ret.push_back(cg.getNext());
+	}
+
+	//usuwam punkty wspó³liniowe
+	{
+		CGeneratorType::Combination c;
+		c[0] = 0;
+		c[1] = 1;
+		c[2] = 2;		
+		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
+
+		c[2] = 3;
+		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
+
+		c[1] = 2;
+		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
+
+		c[0] = 1;		
+		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
+
+		c[0] = 0;
+		c[1] = 4;
+		c[2] = 5;
+		ret.erase(std::remove(ret.begin(), ret.end(), c), ret.end());
+	}
+
+	Combinations retFinall;
+	
+	for(unsigned int i = 0; i < retFinall.size(); ++i){
+		retFinall[i] = ret[i];
+	}
+
+	return retFinall;
+}
+
+void VICONDataSample::getAxis(const VICONDataSample & viconSample,
+	Vec3 & xAxis, Vec3 & yAxis, Vec3 & zAxis)
 {
 	using namespace boost::accumulators;
 	typedef accumulator_set<Vec3::Scalar, stats<tag::mean>> NormalAccumulator;
 
-	typedef Eigen::Quaternion<double> Quat;
+	const static Combinations combinations(generateCombinations());
 
 	//osie ró¿ki przyjmujê nastêpuj¹co:
 	//dó³ litery T w kierunku daszka to oœ Y, daszek z lewej do prawej to oœ X
@@ -113,8 +114,7 @@ const VICONDataSample::Vec3 VICONDataSample::estimateOrientation(const VICONData
 	points[5] = viconSample.positionM6();
 
 	//oœ Y "ró¿d¿ki", d³u¿sza pionowa kreska litery T, w kierunku daszka
-	Vec3 yAxis;
-	{	
+	{
 		NormalAccumulator yAxisX;
 		NormalAccumulator yAxisY;
 		NormalAccumulator yAxisZ;
@@ -136,56 +136,99 @@ const VICONDataSample::Vec3 VICONDataSample::estimateOrientation(const VICONData
 
 	yAxis.normalize();
 
-	//oœ X "ró¿d¿ki" - daszek litery T od lewa do prawa (marker M6 po lewej,
-	// M5 po prawej)
-	Vec3 xAxis;
-	{	
-		NormalAccumulator xAxisX;
-		NormalAccumulator xAxisY;
-		NormalAccumulator xAxisZ;
+	//oœ Z "ró¿d¿ki" - najbogatsza w kombinacje punktów (bazuje na iloczynie wektorowym)
+	{
+		NormalAccumulator zAxisX;
+		NormalAccumulator zAxisY;
+		NormalAccumulator zAxisZ;
 
-		Vec3 xAxisSample = points[4] - points[0];
-		xAxisSample.normalize();
-		xAxisX(xAxisSample.x());
-		xAxisY(xAxisSample.y());
-		xAxisZ(xAxisSample.z());
+		for(auto it = combinations.begin(); it != combinations.end(); ++it){
 
-		xAxisSample = points[4] - points[5];
-		xAxisSample.normalize();
-		xAxisX(xAxisSample.x());
-		xAxisY(xAxisSample.y());
-		xAxisZ(xAxisSample.z());
+			auto c = *it;
 
-		xAxisSample = points[0] - points[5];
-		xAxisSample.normalize();
-		xAxisX(xAxisSample.x());
-		xAxisY(xAxisSample.y());
-		xAxisZ(xAxisSample.z());
-			
+			Vec3 a(Vec3::Zero());
+			Vec3 b(Vec3::Zero());
 
-		xAxis.x() = mean(xAxisX);
-		xAxis.y() = mean(xAxisY);
-		xAxis.z() = mean(xAxisZ);
+			if(c[2] == 5 && c[1] == 4){
+
+				a = points[c[1]] - points[c[2]];
+				b = points[c[2]] - points[c[0]];
+				
+
+			}else if(c[2] == 5){
+
+				a = points[c[1]] - points[c[2]];
+				b = points[c[0]] - points[c[2]];
+
+			}else if(c[2] == 4){
+
+				a = points[c[2]] - points[c[0]];
+				b = points[c[0]] - points[c[1]];
+
+			}
+
+			Vec3 res = a.cross(b);
+			res.normalize();
+
+			zAxisX(res.x());
+			zAxisY(res.y());
+			zAxisZ(res.z());
+
+		}
+
+		zAxis.x() = mean(zAxisX);
+		zAxis.y() = mean(zAxisY);
+		zAxis.z() = mean(zAxisZ);
 	}
 
-	xAxis.normalize();
-
-	//oœ Z "ró¿d¿ki"
-	Vec3 zAxis = xAxis.cross(yAxis);
 	zAxis.normalize();
 
-	Quat q1(Quat::FromTwoVectors(Vec3(1.0,0.0,0.0), xAxis));	
+	//oœ X "ró¿d¿ki" - daszek litery T od lewa do prawa (marker M6 po lewej,
+	// M5 po prawej)
+	// ta oœ jako najubo¿sza bêdzie wyznaczana z iloczynu wektorowego osi Y i Z
+	xAxis = yAxis.cross(zAxis);
+}
 
-	Vec3 tmpYAxis = q1._transformVector(yAxis);
+const VICONDataSample::Vec3 VICONDataSample::estimateOrientation(const VICONDataSample & viconSample)
+{
+	Vec3 xAxis;
+	Vec3 yAxis;
+	Vec3 zAxis;
 
-	Quat q2(Quat::FromTwoVectors(tmpYAxis, yAxis));
+	getAxis(viconSample, xAxis, yAxis, zAxis);
 
-	Quat quat = q1 * q2;
+	//macierze z których próbuje wyci¹gac k¹ty eulera!!
+	//osie wierszami
+	Eigen::Matrix3d m(Eigen::Matrix3d::Zero());	
+
+	m(0,0) = xAxis.x();
+	m(1,0) = yAxis.x();
+	m(2,0) = zAxis.x();
+	m(0,1) = xAxis.y();
+	m(1,1) = yAxis.y();
+	m(2,1) = zAxis.y();
+	m(0,2) = xAxis.z();
+	m(1,2) = yAxis.z();
+	m(2,2) = zAxis.z();
 
 	Vec3 ret;
 
-	osg::QuatUtils::quaterionToEuler(quat.x(), quat.y(), quat.z(), quat.w(),
-		ret.x(), ret.y(), ret.z());
+	ret.x() = std::atan2(m(1,2), m(2,2));
+	ret.y() = std::atan2(-m(0,2), std::sqrt(std::pow(m(0,0), 2.0) + std::pow(m(0,1), 2.0)));
+
+	double c1 = std::cos(ret.x());
+	double s1 = std::sin(ret.x());
+
+	ret.z() = std::atan2(s1 * m(2,0) - c1 * m(1,0), c1 * m(1,1) - s1 * m(2,1));	
+	
+	/*
+	
+	typedef Eigen::Quaterniond Quat;
+
+	Quat q(m);
+
+	osg::QuatUtils::quaterionToEuler(q.x(), q.y(), q.z(), q.w(), ret.x(), ret.y(), ret.z());
+	*/
 
 	return ret;
 }

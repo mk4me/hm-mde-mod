@@ -16,7 +16,6 @@
 #include <Eigen/Core>
 #include <boost/array.hpp>
 
-
 namespace IMU {
 
 class VICONDataSample
@@ -85,6 +84,11 @@ public:
 	//! Metoda statyczna wyznaczaj¹ca œredni¹ orientacjê cia³¹ dla zadanego pomiaru
 	//! Generuje wszystkie mo¿liwe trójki punktów z których generuje wektory p³aszczyzn i uœrednia je
 	static const Vec3 estimateOrientation(const VICONDataSample & viconSample);
+
+private:
+
+	static void getAxis(const VICONDataSample & viconSample,
+		Vec3 & xAxis, Vec3 & yAxis, Vec3 & zAxis);
 
 private:
 	//! Identyfikator czasu próbki

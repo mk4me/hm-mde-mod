@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>IMU Data Visualizer</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::ForceTabbedDocks|QMainWindow::VerticalTabs</set>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2"/>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>Plik</string>
+    </property>
+    <addaction name="action_LoadXSENS"/>
+    <addaction name="action_LoadVICON"/>
+    <addaction name="separator"/>
+    <addaction name="action_Quit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>Pomoc</string>
+    </property>
+    <addaction name="action_AboutAuthors"/>
+    <addaction name="separator"/>
+    <addaction name="action_AboutApp"/>
+   </widget>
+   <widget class="QMenu" name="menuNarz_dzia">
+    <property name="title">
+     <string>Narzędzia</string>
+    </property>
+    <addaction name="actionWyznacz_orientacje_VICON"/>
+    <addaction name="actionDopasuj_VICON_z_XSENS"/>
+    <addaction name="actionFiltruj"/>
+   </widget>
+   <widget class="QMenu" name="menuDane">
+    <property name="title">
+     <string>Dane</string>
+    </property>
+    <widget class="QMenu" name="menuZa_adaowane_dane">
+     <property name="title">
+      <string>Załadaowane dane</string>
+     </property>
+     <addaction name="actionVICON"/>
+     <addaction name="actionIMU"/>
+     <addaction name="actionXSENS"/>
+    </widget>
+    <addaction name="menuZa_adaowane_dane"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menuNarz_dzia"/>
+   <addaction name="menu_Help"/>
+   <addaction name="menuDane"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="action_LoadXSENS">
+   <property name="text">
+    <string>Załaduj dane XSENS</string>
+   </property>
+  </action>
+  <action name="action_LoadVICON">
+   <property name="text">
+    <string>Załaduj dane VICON</string>
+   </property>
+  </action>
+  <action name="action_Close">
+   <property name="text">
+    <string>Zamknij</string>
+   </property>
+  </action>
+  <action name="action_Quit">
+   <property name="text">
+    <string>Wyjście</string>
+   </property>
+  </action>
+  <action name="action_AboutAuthors">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>O autorach</string>
+   </property>
+  </action>
+  <action name="action_AboutApp">
+   <property name="text">
+    <string>O programie</string>
+   </property>
+  </action>
+  <action name="actionWyznacz_orientacje_VICON">
+   <property name="text">
+    <string>Wyznacz orientacje VICON</string>
+   </property>
+  </action>
+  <action name="actionDopasuj_VICON_z_XSENS">
+   <property name="text">
+    <string>Dopasuj VICON z XSENS</string>
+   </property>
+  </action>
+  <action name="actionFiltruj">
+   <property name="text">
+    <string>Filtruj...</string>
+   </property>
+  </action>
+  <action name="actionVICON">
+   <property name="text">
+    <string>VICON</string>
+   </property>
+  </action>
+  <action name="actionIMU">
+   <property name="text">
+    <string>IMU</string>
+   </property>
+  </action>
+  <action name="actionXSENS">
+   <property name="text">
+    <string>XSENS</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>action_LoadVICON</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>loadVICONData()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_LoadXSENS</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>loadXSENSData()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>loadXSENSData()</slot>
+  <slot>loadVICONData()</slot>
+ </slots>
+</ui>

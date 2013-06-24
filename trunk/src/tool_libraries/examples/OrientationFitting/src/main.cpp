@@ -19,68 +19,10 @@
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Quaternion<double>)
 
-int main( int argc, char **argv )
-{
 
-	if(argc < 3){
-		std::cerr << "Za ma³o parametrów - wymagane s¹ conajmniej 2.\n" \
-			"Pierwszy parametr opisuje œcie¿kê do pliku z danymi VICON.\n" \
-			"Drugi parametr opisuje œcie¿kê do odpowiadaj¹cego pliku z danymi XSENS" << std::endl;
-
-		return -1;
-	}
-
-	std::string viconDataFile(argv[1]);
-	std::string xsensDataFile(argv[2]);
-
-	if(!boost::filesystem::exists(viconDataFile) || !boost::filesystem::exists(xsensDataFile)){
-		std::cerr << "Jeden z plików:\n" << viconDataFile << "\nlub\n" << xsensDataFile << "\nnie istnieje." << std::endl;
-
-		return -2;
-	}
-
-	//czytanie danych vicon
-	IMU::VICONDataReader viconReader(viconDataFile);
-	IMU::VICONDataSample viconSample;
-	std::vector<IMU::VICONDataSample> viconSamples;
-
-	//czytanie danych xsens
-	IMU::XSENSDataReader xsensReader(xsensDataFile);
-	IMU::XSENSDataSample xsensSample;
-	std::vector<IMU::XSENSDataSample> xsensSamples;
-
-	while(viconReader.readNextSample(viconSample) == IMU::UniversalDataReader<IMU::VICONDataSample>::RESULT_OK){
-		viconSamples.push_back(viconSample);
-	}
-
-	while(xsensReader.readNextSample(xsensSample) == IMU::UniversalDataReader<IMU::XSENSDataSample>::RESULT_OK){
-		xsensSamples.push_back(xsensSample);
-	}
-
-	std::vector<IMU::OrientationFitting::Quat> viconOrientations;
-	viconOrientations.reserve(viconSamples.size());
-
-	for(auto it = viconSamples.begin(); it != viconSamples.end(); ++it){
-		auto euler = IMU::VICONDataSample::estimateOrientation(*it);
-		IMU::OrientationFitting::Quat q;
-		osg::QuatUtils::eulerToQuaternion(euler.x(), euler.y(), euler.z(),
-			q.x(), q.y(), q.z(), q.w());
-		viconOrientations.push_back(q);
-	}
-
-	std::vector<IMU::OrientationFitting::Quat> xsensOrientations;
-	xsensOrientations.reserve(xsensSamples.size());
-
-	for(auto it = xsensSamples.begin(); it != xsensSamples.end(); ++it){
-		IMU::OrientationFitting::Quat q;
-		osg::QuatUtils::eulerToQuaternion(
-			osg::DegreesToRadians((*it).estimatedOrientationSample().x()),
-			osg::DegreesToRadians((*it).estimatedOrientationSample().y()),
-			osg::DegreesToRadians((*it).estimatedOrientationSample().z()),
-			q.x(), q.y(), q.z(), q.w());
-		xsensOrientations.push_back(q);
-	}
-
+void fitData(const std::string & outFile,
+	const std::vector<IMU::OrientationFitting::Quat> & xsensOrientations,
+	const std::vector<IMU::OrientationFitting::Quat> & viconOrientations){
 
 	unsigned long int start = 0;
 	unsigned long int offset = 0;
@@ -159,7 +101,7 @@ int main( int argc, char **argv )
 
 	unsigned long int stop = std::min(viconOrientations.size() - start, xsensOrientations.size() + offset);
 
-	std::ofstream out("orientacje_VICON.csv");
+	std::ofstream out(outFile);
 	out << "XSENS_Roll;XSENS_Pitch;XSENS_Yaw;XSENS_MOD_Roll;XSENS_MOD_Pitch;XSENS_MOD_Yaw;VICON_Roll;VICON_Pitch;VICON_Yaw;"
 		<< std::endl;
 
@@ -192,41 +134,72 @@ int main( int argc, char **argv )
 
 	out.close();
 
+}
 
-	/*
-	auto s = std::max(viconSamples.size(), xsensSamples.size());
 
-	if(viconSamples.size() < s){
-		viconSamples.resize(s);
+int main( int argc, char **argv )
+{
+
+	if(argc < 3){
+		std::cerr << "Za ma³o parametrów - wymagane s¹ conajmniej 2.\n" \
+			"Pierwszy parametr opisuje œcie¿kê do pliku z danymi VICON.\n" \
+			"Drugi parametr opisuje œcie¿kê do odpowiadaj¹cego pliku z danymi XSENS" << std::endl;
+
+		return -1;
 	}
 
-	if(xsensSamples.size() < s){
-		xsensSamples.resize(s);
+	std::string viconDataFile(argv[1]);
+	std::string xsensDataFile(argv[2]);
+
+	if(!boost::filesystem::exists(viconDataFile) || !boost::filesystem::exists(xsensDataFile)){
+		std::cerr << "Jeden z plików:\n" << viconDataFile << "\nlub\n" << xsensDataFile << "\nnie istnieje." << std::endl;
+
+		return -2;
 	}
 
-	std::ofstream out("orientacje_VICON.csv");
-	out << "XSENS_Roll;XSENS_Pitch;XSENS_Yaw;VICON_Roll;VICON_Pitch;VICON_Yaw;"
-		<< std::endl;
+	//czytanie danych vicon
+	IMU::VICONDataReader viconReader(viconDataFile);
+	IMU::VICONDataSample viconSample;
+	std::vector<IMU::VICONDataSample> viconSamples;
 
-	//czytam dane z "ró¿d¿ki" i konwertujê je do orientacji
-	for(unsigned int i = 0; i < s; ++i){
-		auto orientation = IMU::VICONDataSample::estimateOrientation(viconSamples[i]);
-		std::cout << "Estimated orientation: (" << osg::RadiansToDegrees(orientation.x()) << ",\t"
-			<< osg::RadiansToDegrees(orientation.y()) << ",\t"
-			<< osg::RadiansToDegrees(orientation.z()) << std::endl;
+	//czytanie danych xsens
+	IMU::XSENSDataReader xsensReader(xsensDataFile);
+	IMU::XSENSDataSample xsensSample;
+	std::vector<IMU::XSENSDataSample> xsensSamples;
 
-		xsensSample = xsensSamples[i];
-
-		out << xsensSample.estimatedOrientationSample().x() << ";"
-			<< xsensSample.estimatedOrientationSample().y() << ";"
-			<< xsensSample.estimatedOrientationSample().z() << ";"
-			<< osg::RadiansToDegrees(orientation.x()) << ";"
-			<< osg::RadiansToDegrees(orientation.y()) << ";"
-			<< osg::RadiansToDegrees(orientation.z()) << ";" << std::endl;
+	while(viconReader.readNextSample(viconSample) == IMU::UniversalDataReader<IMU::VICONDataSample>::RESULT_OK){
+		viconSamples.push_back(viconSample);
 	}
 
-	out.close();
-	*/
+	while(xsensReader.readNextSample(xsensSample) == IMU::UniversalDataReader<IMU::XSENSDataSample>::RESULT_OK){
+		xsensSamples.push_back(xsensSample);
+	}
+
+	std::vector<IMU::OrientationFitting::Quat> viconOrientations;
+	viconOrientations.reserve(viconSamples.size());
+
+	for(auto it = viconSamples.begin(); it != viconSamples.end(); ++it){
+		auto euler = IMU::VICONDataSample::estimateOrientation(*it);
+		IMU::OrientationFitting::Quat q;
+		osg::QuatUtils::eulerToQuaternion(euler.x(), euler.y(), euler.z(),
+			q.x(), q.y(), q.z(), q.w());
+		viconOrientations.push_back(q);
+	}
+
+	std::vector<IMU::OrientationFitting::Quat> xsensOrientations;
+	xsensOrientations.reserve(xsensSamples.size());
+
+	for(auto it = xsensSamples.begin(); it != xsensSamples.end(); ++it){
+		IMU::OrientationFitting::Quat q;
+		osg::QuatUtils::eulerToQuaternion(
+			osg::DegreesToRadians((*it).estimatedOrientationSample().x()),
+			osg::DegreesToRadians((*it).estimatedOrientationSample().y()),
+			osg::DegreesToRadians((*it).estimatedOrientationSample().z()),
+			q.x(), q.y(), q.z(), q.w());
+		xsensOrientations.push_back(q);
+	}
+
+	fitData("orientacje_VICON.csv", xsensOrientations, viconOrientations);
 
 	return 0;
 }

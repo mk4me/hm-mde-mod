@@ -39,7 +39,7 @@ private:
 	//! Pierwsze 4 elementy wektora to kwaternion orientacji:
 	//! x, y, z, w, zas kolejne 3 to prêdkoœci k¹towe cia³a
 	//typedef boost::array<double, 7> StateType;
-
+	
 	//! Struktura opisuj¹ca stan procesu
 	struct StateType {
 		//! Orientacja cia³a
@@ -157,6 +157,46 @@ private:
 	MeasurementCovarianceMatrix measurementsNoiseMatrix_;
 	//! Czas pomiêdzy próbkami
 	double dt_;
+};
+
+
+class CustomNameMJ_UKF_OrientationEstimator : public MJ_UKF_OrientationEstimator
+{
+public:
+
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+		//! Konstruktor
+		//! \param processNoise Szum procesu
+		//! \param measurementsNoise Szum pomiarów
+		CustomNameMJ_UKF_OrientationEstimator(const ProcessCovarianceMatrix & processNoise,
+		const MeasurementCovarianceMatrix & measurementsNoise, const std::string & name)
+		: MJ_UKF_OrientationEstimator(processNoise, measurementsNoise), name_(name)
+	{
+
+	}
+	/*
+	//! Konstruktor
+	//! \param processNoise Szum procesu
+	//! \param measurementsNoise Szum pomiarów
+	//! \param initialState Inicjalny stan procesu
+	CustomNameMJ_UKF_OrientationEstimator(const ProcessCovarianceMatrix & processNoise,
+		const MeasurementCovarianceMatrix & measurementsNoise,
+		const StateType & initialState, const std::string & name)
+		: MJ_UKF_OrientationEstimator(processNoise, measurementsNoise, initialState), name_(name)
+	{
+
+	}
+	*/
+	//! \return Nazwa algorytmu
+	virtual const std::string name() const
+	{
+		return name_;
+	}
+
+private:
+	//! Nazwa
+	std::string name_;
 };
 
 #endif	//	HEADER_GUARD___MJ_UKF_ORIENTATIONESTIMATOR_H__
