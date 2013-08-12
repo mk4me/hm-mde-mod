@@ -10,54 +10,66 @@
 #ifndef HEADER_GUARD_EXAMPLE__EXAMPLEPINS_H__
 #define HEADER_GUARD_EXAMPLE__EXAMPLEPINS_H__
 
-#include <dflib/Pin.h>
-#include <dflib/IDFPin.h>
-#include <dflib/IDFNode.h>
-#include <dflib/Node.h>
-
+#include <plugins/dfElements/DFPins.h>
 #include "Plugin.h"
 
-class ExampleIntOutputPin : public df::OutputPin, public df::IDFOutput
-{
-public:
-	ExampleIntOutputPin(df::ISourceNode * node);
+typedef UniversalOutputPinT<ExampleIntStatistics> StatsOutputPin;
+typedef UniversalInputPinT<Ints> ExampleIntInputPin;
+typedef UniversalOutputPinT<Ints> ExampleIntOutputPin;
 
-public:
-	const IntsConstPtr value() const;
-	void value(IntsPtr val);
-	virtual void reset();
-
-private:
-	IntsPtr val;
-};
-
-
-class ExampleIntInputPin : public df::InputPin, public df::IDFInput
-{
-public:
-	ExampleIntInputPin(df::ISinkNode * node);
-	
-public:
-	virtual void copyData(const df::IDFOutput * pin);
-	virtual void reset();
-	const IntsConstPtr value() const;
-
-private:
-	IntsPtr val;
-};
-
-class ExampleStatsOutputPin : public df::OutputPin, public df::IDFOutput
-{
-public:
-	ExampleStatsOutputPin(df::ISourceNode * node);
-
-public:
-	const ExampleIntStatisticsConstPtr value() const;
-	void value(ExampleIntStatisticsPtr val);
-	virtual void reset();
-
-private:
-	ExampleIntStatisticsPtr val;
-};
+//#include <dflib/Pin.h>
+//#include <dflib/IDFPin.h>
+//#include <dflib/IDFNode.h>
+//#include <dflib/Node.h>
+//#include <plugins/newVdf/IDataFlowProvider.h>
+//#include "Plugin.h"
+//
+//class ExampleIntOutputPin : public df::OutputPin, public df::IDFOutput, public vdf::IMDEOutputPin
+//{
+//    MDE_OUTPUT_PIN(Ints);
+//public:
+//	ExampleIntOutputPin(df::ISourceNode * node);
+//
+//public:
+//	const IntsConstPtr value() const;
+//	void value(IntsPtr val);
+//	virtual void reset();
+//
+//private:
+//	IntsPtr val;
+//};
+//
+//
+//class ExampleIntInputPin : public df::InputPin, public df::IDFInput
+//{
+//public:
+//	ExampleIntInputPin(df::ISinkNode * node);
+//	
+//public:
+//	virtual void copyData(const df::IDFOutput * pin);
+//
+//    virtual void reset();
+//	const IntsConstPtr value() const;
+//
+//    virtual const bool pinCompatible( const df::IOutputPin * pin ) const;
+//
+//private:
+//	IntsPtr val;
+//};
+//
+//class ExampleStatsOutputPin : public df::OutputPin, public df::IDFOutput, public vdf::IMDEOutputPin
+//{
+//    MDE_OUTPUT_PIN(ExampleIntStatistics)
+//public:
+//	ExampleStatsOutputPin(df::ISourceNode * node);
+//
+//public:
+//	const ExampleIntStatisticsConstPtr value() const;
+//	void value(ExampleIntStatisticsPtr val);
+//	virtual void reset();
+//
+//private:
+//	ExampleIntStatisticsPtr val;
+//};
 
 #endif

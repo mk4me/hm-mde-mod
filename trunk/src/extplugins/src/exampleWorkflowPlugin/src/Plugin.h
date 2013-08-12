@@ -12,6 +12,7 @@
 #include <corelib/IPlugin.h>
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
 #include <plugins/newVdf/IDataFlowProvider.h>
+#include <vector>
 
 typedef std::vector<int> Ints;
 typedef utils::shared_ptr<Ints> IntsPtr;

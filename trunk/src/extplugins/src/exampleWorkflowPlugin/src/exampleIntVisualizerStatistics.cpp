@@ -1,8 +1,9 @@
 #include "PCH.h"
 #include "exampleIntVisualizerStatistics.h"
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
+#include <QtGui/QTextEdit>
 
-ExampleIntVisualizerStatistics::StatsSerie::StatsSerie( QLineEdit * widget ) : widget(widget)
+ExampleIntVisualizerStatistics::StatsSerie::StatsSerie( QTextEdit * widget ) : widget(widget)
 {
 
 }
@@ -20,6 +21,17 @@ const std::string ExampleIntVisualizerStatistics::StatsSerie::getName() const
 void ExampleIntVisualizerStatistics::StatsSerie::setData( const core::TypeInfo & requestedDataType, const core::ObjectWrapperConstPtr & data )
 {
 	this->data = data;
+    ExampleIntStatisticsConstPtr statistics = data->get();
+    this->widget->clear();
+    QString content;
+    content += QString("Mean: %1\n").arg( statistics->getMean());
+    content += QString("Second Moment: %1\n").arg( statistics->getSecondMoment());
+    content += QString("Kurtosis: %1\n").arg( statistics->getKurtosis());
+    content += QString("Max: %1\n").arg( statistics->getMax());
+    content += QString("Min: %1\n").arg( statistics->getMin());
+    content += QString("Median: %1\n").arg( statistics->getMedian());
+    content += QString("Skewness: %1\n").arg( statistics->getSkewness());
+    this->widget->setText(content);
 	this->requestedType = requestedDataType;
 }
 
@@ -80,9 +92,9 @@ void ExampleIntVisualizerStatistics::update( double deltaTime )
 
 plugin::IVisualizer::ISerie* ExampleIntVisualizerStatistics::createSerie( const core::TypeInfo & requestedType, const core::ObjectWrapperConstPtr & data )
 {
-	QLineEdit* lineEdit = new QLineEdit();
-	widget->layout()->addWidget(lineEdit);
-	StatsSerie * serie = new StatsSerie(lineEdit);
+	QTextEdit* edit = new QTextEdit();
+	widget->layout()->addWidget(edit);
+	StatsSerie * serie = new StatsSerie(edit);
 	serie->setName("Int statistics");
 	serie->setData(requestedType, data);
 	

@@ -38,9 +38,9 @@ void ExampleIntVisualizer::update( double deltaTime )
 
 plugin::IVisualizer::ISerie* ExampleIntVisualizer::createSerie(const core::TypeInfo & requestedType, const core::ObjectWrapperConstPtr & data)
 {
-	QLineEdit* lineEdit = new QLineEdit();
-	widget->layout()->addWidget(lineEdit);
-	IntSerie * serie = new IntSerie(lineEdit);
+	QListView* listView = new QListView();
+	widget->layout()->addWidget(listView);
+	IntSerie * serie = new IntSerie(listView);
 	serie->setName("Int serie");
 	serie->setData(requestedType, data);
 	return serie;
@@ -54,8 +54,8 @@ plugin::IVisualizer::ISerie* ExampleIntVisualizer::createSerie( const ISerie* se
 void ExampleIntVisualizer::removeSerie( ISerie* serie )
 {
 	IntSerie * s = dynamic_cast<IntSerie*>(serie);
-	widget->layout()->removeWidget(s->widget);
-	s->widget = nullptr;
+	widget->layout()->removeWidget(s->view);
+	s->view = nullptr;
 }
 
 void ExampleIntVisualizer::setActiveSerie( ISerie * serie )
@@ -79,8 +79,8 @@ int ExampleIntVisualizer::getMaxDataSeries() const
 }
 
 
-ExampleIntVisualizer::IntSerie::IntSerie( QLineEdit * widget ) :
-	widget(widget)
+ExampleIntVisualizer::IntSerie::IntSerie( QListView * view) :
+	view(view)
 {
 
 }
@@ -98,7 +98,14 @@ const std::string ExampleIntVisualizer::IntSerie::getName() const
 void ExampleIntVisualizer::IntSerie::setData( const core::TypeInfo & requestedDataType, const core::ObjectWrapperConstPtr & data )
 {
 	requestedType = requestedDataType;
+    IntsConstPtr cints = data->get();
+    // w tym przypadku skorzystalismy z klasy IntsModel, stad potrzeba kopiowania obiektu
+    // zwykle nie jest ono konieczne, w koncu mozna wizualizowac obiekty const
+    IntsPtr ints = IntsPtr(new Ints(*cints));
+    IntsModel* model = new IntsModel(ints);
+    view->setModel(model);
 	this->data = data;
+    
 }
 
 void ExampleIntVisualizer::IntSerie::update()

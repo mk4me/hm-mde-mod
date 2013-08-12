@@ -4,8 +4,8 @@
 
 void ExampleIntProccesorFlopSignMul::process()
 {
-    auto inIntsA = inPinA->value();
-    auto inIntsB = inPinB->value();
+    auto inIntsA = inPinA->getValue();
+    auto inIntsB = inPinB->getValue();
     if(inIntsA->empty() == true || inIntsB->empty() == true)
     {
         return;
@@ -23,7 +23,7 @@ void ExampleIntProccesorFlopSignMul::process()
         }
         outVals->push_back(val);
     }
-    outPinA->value(outVals);
+    outPinA->setValue(outVals);
 }
 
 void ExampleIntProccesorFlopSignMul::reset()

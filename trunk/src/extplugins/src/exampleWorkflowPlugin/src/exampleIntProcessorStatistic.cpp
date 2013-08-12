@@ -4,14 +4,14 @@
 ExampleIntProccesorStatistic::ExampleIntProccesorStatistic()
 {
 	inPinA = new ExampleIntInputPin(this);
-	outPinA = new ExampleStatsOutputPin(this);
+	outPinA = new StatsOutputPin(this);
 	addInputPin(inPinA);
 	addOutputPin(outPinA);
 }
 
 void ExampleIntProccesorStatistic::process()
 {
-	IntsConstPtr vals = inPinA->value();
+	IntsConstPtr vals = inPinA->getValue();
 	if(vals->empty() == true)
 	{
 	    return;
@@ -21,7 +21,7 @@ void ExampleIntProccesorStatistic::process()
 	for(auto it = vals->begin(); it != vals->end(); it++){
 	    stats->addSample(*it);
 	}
-	outPinA->value(stats);
+	outPinA->setValue(stats);
 }
 
 void ExampleIntProccesorStatistic::reset()

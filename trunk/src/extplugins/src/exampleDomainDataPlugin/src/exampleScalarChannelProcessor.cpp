@@ -3,8 +3,8 @@
 
 ExampleScalarChannelProcessor::ExampleScalarChannelProcessor(double scale) : scale(scale)
 {
-	inPinA = new ScalarChannelInputPin(this);
-	outPinA = new ScalarChannelOutputPin(this);
+	inPinA = new ScalarInputPin(this);
+	outPinA = new ScalarOutputPin(this);
 	addInputPin(inPinA);
 	addOutputPin(outPinA);
 
@@ -12,7 +12,7 @@ ExampleScalarChannelProcessor::ExampleScalarChannelProcessor(double scale) : sca
 
 void ExampleScalarChannelProcessor::process()
 {
-	ScalarChannelReaderInterfaceConstPtr inScalarData = inPinA->value();
+	ScalarChannelReaderInterfaceConstPtr inScalarData = inPinA->getValue();
 	        
 	//kopiuje go - przygotowuje sobie porcje danych wyjsciowych
 	ScalarChannelPtr outScalarData(new ScalarChannel(inScalarData->getSamplesPerSecond()));
@@ -28,7 +28,7 @@ void ExampleScalarChannelProcessor::process()
 	}
 	
 	//zapisujê zmodyfikowane dane do udostêpniena
-	outPinA->value(outScalarData);
+	outPinA->setValue(outScalarData);
 }
 
 void ExampleScalarChannelProcessor::reset()

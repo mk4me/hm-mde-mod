@@ -12,7 +12,7 @@
 #include <corelib/IVisualizer.h>
 #include <QtCore/QObject>
 
-class QLineEdit;
+class QTextEdit;
 
 class ExampleIntVisualizerStatistics : public QObject, public plugin::IVisualizer
 {
@@ -26,7 +26,7 @@ public:
     {
 		friend class ExampleIntVisualizerStatistics;
     public:
-        StatsSerie(QLineEdit * widget);
+        StatsSerie(QTextEdit * widget);
 
     public:
 		virtual void setName(const std::string & name);
@@ -37,7 +37,7 @@ public:
 		virtual const core::TypeInfo & getRequestedDataType() const;
 
 	private:
-		QLineEdit * widget;
+		QTextEdit * widget;
 		core::ObjectWrapperConstPtr data;
 		std::string name;
 		utils::TypeInfo requestedType;
@@ -45,7 +45,7 @@ public:
 
 public:
     //!    
-    ExampleIntVisualizerStatistics();;
+    ExampleIntVisualizerStatistics();
     //!
     virtual ~ExampleIntVisualizerStatistics() {};
 

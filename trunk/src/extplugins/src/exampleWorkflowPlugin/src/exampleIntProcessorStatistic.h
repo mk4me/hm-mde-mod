@@ -16,8 +16,8 @@
 #include <dflib/IDFPin.h>
 #include <dflib/IDFNode.h>
 #include <dflib/Node.h>
+#include <plugins/dfElements/DFPins.h>
 #include "examplePins.h"
-
 
 class ExampleIntProccesorStatistic :  public df::ProcessingNode, public df::IDFProcessor
 {
@@ -27,8 +27,8 @@ public:
 	virtual void process();
 
 private:
-	ExampleIntInputPin * inPinA;
-	ExampleStatsOutputPin * outPinA;
+	ExampleIntInputPin* inPinA;
+	StatsOutputPin* outPinA;
 };
 
 #endif  //  HEADER_GUARD___EXAMPLEINTPROCESSORSTATISTIC_H__

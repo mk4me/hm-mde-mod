@@ -49,7 +49,7 @@ public:
         return acc::mean(accumulator);
     }
 
-    T getSecondMoment(int order) const
+    T getSecondMoment() const
     {
         return acc::moment<2>(accumulator);
     }

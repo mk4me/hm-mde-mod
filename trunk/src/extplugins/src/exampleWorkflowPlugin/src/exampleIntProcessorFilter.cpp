@@ -26,7 +26,7 @@ ExampleIntProccesorFilter::ExampleIntProccesorFilter(const ExampleIntProccesorFi
 
 void ExampleIntProccesorFilter::process()
 {
-	IntsConstPtr vals = inPinA->value();
+	IntsConstPtr vals = inPinA->getValue();
 	IntsPtr ints(new Ints());
 	
 	for(auto it = vals->begin(); it != vals->end(); it++){
@@ -35,7 +35,7 @@ void ExampleIntProccesorFilter::process()
 	    }
 	}
 	
-	outPinA->value(ints);
+	outPinA->setValue(ints);
 }
 
 void ExampleIntProccesorFilter::reset()

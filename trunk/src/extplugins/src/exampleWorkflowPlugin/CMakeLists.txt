@@ -10,6 +10,8 @@ SET_PRIVATE_HEADERS (
 	exampleIntVisualizer.h
 	exampleIntVisualizerStatistics.h
 	examplePins.h
+	exampleIntRemoteSource.h
+	IntsModel.h
 	PCH.h
 )
 
@@ -25,14 +27,18 @@ SET_SOURCE_FILES (
 	exampleIntWidgetProcessorFilterConfiguration.cpp
 	exampleIntProcessorFlopSignMul.cpp
 	exampleIntVisualizer.cpp
+	exampleIntRemoteSource.cpp
 	examplePins.cpp
 	exampleIntVisualizerStatistics.cpp
+	IntsModel.cpp
 	PCH.cpp
 )
 
 SET_MOC_FILES(
 	exampleIntWidgetProcessorFilterConfiguration.h
 	exampleIntVisualizerStatistics.h
+	exampleIntRemoteSource.h
+	IntsModel.h
  )
 
 SET_UI_FILES(

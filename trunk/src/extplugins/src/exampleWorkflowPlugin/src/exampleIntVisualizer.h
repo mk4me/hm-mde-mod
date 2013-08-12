@@ -10,6 +10,7 @@
 #define HEADER_GUARD___EXAMPLEINTVISUALIZER_H__
 
 #include <corelib/IVisualizer.h>
+#include "exampleIntRemoteSource.h"
 
 class QLineEdit;
 
@@ -24,7 +25,7 @@ public:
     {
 		friend class ExampleIntVisualizer;
     public:
-        IntSerie(QLineEdit * widget);
+        IntSerie(QListView * view);
 
     public:
 		virtual void setName(const std::string & name);
@@ -35,7 +36,7 @@ public:
 		virtual const core::TypeInfo & getRequestedDataType() const;
 
     private:
-        QLineEdit * widget;
+        QListView * view;
         core::ObjectWrapperConstPtr data;
         std::string name;
 		utils::TypeInfo requestedType;
