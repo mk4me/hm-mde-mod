@@ -11,7 +11,7 @@ inline const osg::Vec4 qtColorToOSG(const QColor & color)
 	return osg::Vec4(color.redF(), color.greenF(), color.blueF(), color.alphaF());
 }
 
-inline const osg::Vec3 imuVec3ToOSG(const IMU::VICONDataSample::Vec3 & position)
+inline const osg::Vec3 imuVec3ToOSG(const IMU::Vec3 & position)
 {
 	return osg::Vec3(position.x(), position.y(), position.z());
 }
@@ -33,7 +33,7 @@ const SimpleTStickDrawHelper::ShpereDescription SimpleTStickDrawHelper::createSp
 	return ret;
 }
 
-void SimpleTStickDrawHelper::setSpherePosition(ShpereDescription & sphere, const IMU::VICONDataSample::Vec3 & position)
+void SimpleTStickDrawHelper::setSpherePosition(ShpereDescription & sphere, const IMU::Vec3 & position)
 {	
 	sphere.shape->setCenter(imuVec3ToOSG(position));	
 	sphere.shapeDrawable->dirtyDisplayList();
@@ -42,26 +42,30 @@ void SimpleTStickDrawHelper::setSpherePosition(ShpereDescription & sphere, const
 void SimpleTStickDrawHelper::setSphereColor(ShpereDescription & sphere, const QColor & color)
 {
 	sphere.shapeDrawable->setColor(qtColorToOSG(color));
+	sphere.shapeDrawable->dirtyDisplayList();
 }
 
 void SimpleTStickDrawHelper::setSphereRadius(ShpereDescription & sphere, const double radius)
 {
 	sphere.shape->setRadius(radius);
+	sphere.shapeDrawable->dirtyDisplayList();
 }
 
-void SimpleTStickDrawHelper::setConnectionColor(CylinderDescription & conneciton, const QColor & color)
+void SimpleTStickDrawHelper::setConnectionColor(CylinderDescription & connection, const QColor & color)
 {
-	conneciton.shapeDrawable->setColor(qtColorToOSG(color));
+	connection.shapeDrawable->setColor(qtColorToOSG(color));
+	connection.shapeDrawable->dirtyDisplayList();
 }
 
-void SimpleTStickDrawHelper::setConnectionRadius(CylinderDescription & conneciton, const double radius)
+void SimpleTStickDrawHelper::setConnectionRadius(CylinderDescription & connection, const double radius)
 {
-	conneciton.shape->setRadius(radius);
+	connection.shape->setRadius(radius);
+	connection.shapeDrawable->dirtyDisplayList();
 }
 
 void SimpleTStickDrawHelper::updateConnection(CylinderDescription & connection,
-	const IMU::VICONDataSample::Vec3 & a,
-	const IMU::VICONDataSample::Vec3 & b)
+	const IMU::Vec3 & a,
+	const IMU::Vec3 & b)
 {
 	osg::Vec3 aa(imuVec3ToOSG(a));
 	osg::Vec3 bb(imuVec3ToOSG(b));

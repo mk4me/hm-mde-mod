@@ -20,7 +20,7 @@ class _3PointsTStick : public ITStick
 public:
 	//! Typ opisuj¹cy po³o¿enie ró¿d¿ki, pierwsze dwa elementy to krótszy bok
 	//! (lewy, prawy), ostatni to dó³ d³u¿szego boku
-	typedef boost::array<IMU::VICONDataSample::Vec3, 3> StickPositionType;
+	typedef boost::array<IMU::Vec3, 3> StickPositionType;
 
 public:
 	//! Domyœlny konstruktor

@@ -1,15 +1,16 @@
 #include "3PointsTStick.h"
 #include <osg/Geode>
 #include <Eigen/Eigen>
+#include <osgManipulator/TranslateAxisDragger>
 
 _3PointsTStick::_3PointsTStick()
 {
 	initialize();
 
 	StickPositionType sp;
-	sp[0] = IMU::VICONDataSample::Vec3(50.0, 0.0, 0.0);
-	sp[1] = IMU::VICONDataSample::Vec3(-50.0, 0.0, 0.0);
-	sp[2] = IMU::VICONDataSample::Vec3(0.0, -200.0, 0.0);
+	sp[0] = IMU::Vec3(50.0, 0.0, 0.0);
+	sp[1] = IMU::Vec3(-50.0, 0.0, 0.0);
+	sp[2] = IMU::Vec3(0.0, -200.0, 0.0);
 
 	setPosition(sp);
 }
@@ -45,6 +46,15 @@ void _3PointsTStick::initialize()
 	geode->addDrawable(connections[1].shapeDrawable);
 
 	stickGroup->addChild(geode);
+
+	auto axis = new osgManipulator::TranslateAxisDragger;		
+
+	//domyœlna geometria osi
+	axis->setupDefaultGeometry();
+	axis->setMatrix(osg::Matrix::scale(100.0, 100.0, 100.0));
+	axis->setReferenceFrame(osg::Transform::RELATIVE_RF);
+	stickGroup->addChild(axis);
+
 }
 
 void _3PointsTStick::setPosition(const StickPositionType & position)
@@ -53,13 +63,13 @@ void _3PointsTStick::setPosition(const StickPositionType & position)
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[1], position[1]);
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[2], position[2]);	
 	
-	IMU::VICONDataSample::Vec3 ba = position[1] - position[0];
-	IMU::VICONDataSample::Vec3 ca = position[2] - position[0];
+	IMU::Vec3 ba = position[1] - position[0];
+	IMU::Vec3 ca = position[2] - position[0];
 
 	const double t = ba.dot(ca) / ba.dot(ba);	
 	
 	SimpleTStickDrawHelper::updateConnection(connections[0], position[0], position[1]);
-	SimpleTStickDrawHelper::updateConnection(connections[1], IMU::VICONDataSample::Vec3(position[0] + ba * t), position[2]);
+	SimpleTStickDrawHelper::updateConnection(connections[1], IMU::Vec3(position[0] + ba * t), position[2]);
 }
 
 void _3PointsTStick::setSpheresColor(const QColor & color)

@@ -27,26 +27,26 @@ public:
 	//! Typ danych z IMU
 	typedef std::vector<IMUDataSample> IMUData;
 	//! Typ danych orientacji
-	typedef std::vector<IMUDataSample::Vec3> OrientationData;
+	typedef std::vector<Vec3> OrientationData;
 	//! Typ opisuj¹cy statystyki pomiarów
 	struct EstimationStatistics
 	{
 		//! Suma b³êdów
-		IMUDataSample::Vec3 sum;
+		Vec3 sum;
 		//! Œrednia
-		IMUDataSample::Vec3 mean;
+		Vec3 mean;
 		//! Mediana
-		IMUDataSample::Vec3 median;
+		Vec3 median;
 		//! Maksymalna wartoœæ
-		IMUDataSample::Vec3 max;
+		Vec3 max;
 		//! Minimalna wartoœæ
-		IMUDataSample::Vec3 min;
+		Vec3 min;
 		//! Odchylenie standardowe
-		IMUDataSample::Vec3 stdDev;
+		Vec3 stdDev;
 		//! Kurtoza
-		IMUDataSample::Vec3 kurtosis;
+		Vec3 kurtosis;
 		//! Skoœnoœæ
-		IMUDataSample::Vec3 skewness;
+		Vec3 skewness;
 	};
 
 	//! Typ opisuj¹cy wyniki estymacji

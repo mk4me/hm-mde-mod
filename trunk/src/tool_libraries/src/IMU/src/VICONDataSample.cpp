@@ -122,6 +122,7 @@ void VICONDataSample::getAxis(const VICONDataSample & viconSample,
 		for(unsigned int i = 0; i < 4; ++i){
 			for(unsigned int j = i+1; j < 4; ++j){
 				Vec3 yAxisSample = points[i] - points[j];
+				//Vec3 yAxisSample = points[j] - points[i];
 				yAxisSample.normalize();
 				yAxisX(yAxisSample.x());
 				yAxisY(yAxisSample.y());
@@ -151,19 +152,19 @@ void VICONDataSample::getAxis(const VICONDataSample & viconSample,
 
 			if(c[2] == 5 && c[1] == 4){
 
-				a = points[c[1]] - points[c[2]];
-				b = points[c[2]] - points[c[0]];
+				a = points[5] - points[4];
+				b = points[4] - points[c[0]];
 				
 
 			}else if(c[2] == 5){
 
-				a = points[c[1]] - points[c[2]];
-				b = points[c[0]] - points[c[2]];
+				a = points[5] - points[c[1]];
+				b = points[c[0]] - points[c[1]];
 
 			}else if(c[2] == 4){
 
-				a = points[c[2]] - points[c[0]];
-				b = points[c[0]] - points[c[1]];
+				a = points[c[0]] - points[c[1]];
+				b = points[4] - points[c[1]];
 
 			}
 
@@ -189,7 +190,7 @@ void VICONDataSample::getAxis(const VICONDataSample & viconSample,
 	xAxis = yAxis.cross(zAxis);
 }
 
-const VICONDataSample::Vec3 VICONDataSample::estimateOrientation(const VICONDataSample & viconSample)
+const Vec3 VICONDataSample::estimateOrientation(const VICONDataSample & viconSample)
 {
 	Vec3 xAxis;
 	Vec3 yAxis;
@@ -197,38 +198,5 @@ const VICONDataSample::Vec3 VICONDataSample::estimateOrientation(const VICONData
 
 	getAxis(viconSample, xAxis, yAxis, zAxis);
 
-	//macierze z których próbuje wyci¹gac k¹ty eulera!!
-	//osie wierszami
-	Eigen::Matrix3d m(Eigen::Matrix3d::Zero());	
-
-	m(0,0) = xAxis.x();
-	m(1,0) = yAxis.x();
-	m(2,0) = zAxis.x();
-	m(0,1) = xAxis.y();
-	m(1,1) = yAxis.y();
-	m(2,1) = zAxis.y();
-	m(0,2) = xAxis.z();
-	m(1,2) = yAxis.z();
-	m(2,2) = zAxis.z();
-
-	Vec3 ret;
-
-	ret.x() = std::atan2(m(1,2), m(2,2));
-	ret.y() = std::atan2(-m(0,2), std::sqrt(std::pow(m(0,0), 2.0) + std::pow(m(0,1), 2.0)));
-
-	double c1 = std::cos(ret.x());
-	double s1 = std::sin(ret.x());
-
-	ret.z() = std::atan2(s1 * m(2,0) - c1 * m(1,0), c1 * m(1,1) - s1 * m(2,1));	
-	
-	/*
-	
-	typedef Eigen::Quaterniond Quat;
-
-	Quat q(m);
-
-	osg::QuatUtils::quaterionToEuler(q.x(), q.y(), q.z(), q.w(), ret.x(), ret.y(), ret.z());
-	*/
-
-	return ret;
+	return osg::QuatUtils::axisToEuler<Vec3, Vec3>(xAxis, yAxis, zAxis);
 }

@@ -6,12 +6,14 @@ SET_PUBLIC_HEADERS(
 	DualQuat.h
 	DualQuatUtils.h
 	QuaternionInterpolators.h
+	QuaternionCompressor.h
 )
 
 SET_SOURCE_FILES(
 	QuatUtils.cpp
 	DualQuat.cpp
 	DualQuatUtils.cpp
+	QuaternionCompressor.cpp
 )
 
 END_PROJECT()

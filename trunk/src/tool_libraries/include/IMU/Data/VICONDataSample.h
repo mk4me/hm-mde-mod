@@ -13,7 +13,7 @@
 #ifndef HEADER_GUARD___VICONDATASAMPLE_H__
 #define HEADER_GUARD___VICONDATASAMPLE_H__
 
-#include <Eigen/Core>
+#include <IMU/Data/Types.h>
 #include <boost/array.hpp>
 
 namespace IMU {
@@ -21,8 +21,6 @@ namespace IMU {
 class VICONDataSample
 {
 public:
-	//! Typ reprezentuj¹cy pozycjê 3D
-	typedef Eigen::Vector3d Vec3;
 	//! Typ reprezentuj¹cy identyfikator czasu z VICON
 	typedef unsigned long long int TimeIDType;
 	//! Typ reprezentuj¹cy pozycje markerów ró¿d¿ki
@@ -84,9 +82,11 @@ public:
 	//! Metoda statyczna wyznaczaj¹ca œredni¹ orientacjê cia³¹ dla zadanego pomiaru
 	//! Generuje wszystkie mo¿liwe trójki punktów z których generuje wektory p³aszczyzn i uœrednia je
 	static const Vec3 estimateOrientation(const VICONDataSample & viconSample);
-
-private:
-
+	//! Metoda wyznacza osie orientacji cia³a dla zadanej próbki
+	//! \param viconSample Próbka z której wyci¹gamy osie orientacji cia³a
+	//! \param[out] xAxis Oœ x cia³¹
+	//! \param[out] yAxis Oœ y cia³¹
+	//! \param[out] zAxis Oœ z cia³a
 	static void getAxis(const VICONDataSample & viconSample,
 		Vec3 & xAxis, Vec3 & yAxis, Vec3 & zAxis);
 

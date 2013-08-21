@@ -37,7 +37,7 @@ const TestingFramework::EstimationResults TestingFramework::test(const IMUData &
 	IMUData::size_type s = std::min(input.size(), referenceOrientations.size());
 
 	using namespace boost::accumulators;
-	typedef accumulator_set<IMUDataSample::Vec3::Scalar, stats<tag::mean, tag::moment<2>, tag::variance, tag::median,
+	typedef accumulator_set<Vec3::Scalar, stats<tag::mean, tag::moment<2>, tag::variance, tag::median,
 		tag::skewness, tag::kurtosis, tag::sum, tag::max, tag::min> > IMUAccumulator;
 
 	// Wartoœc zwracana - wyniki testu
@@ -66,7 +66,7 @@ const TestingFramework::EstimationResults TestingFramework::test(const IMUData &
 		for(IMUData::size_type i = 0; i < s; ++i) {
 
 			// estymowana orientacja
-			IMUDataSample::Vec3 estimatedOrientation;
+			Vec3 estimatedOrientation;
 			// estymujê
 			(*estimatorIT)->estimate(input[i], estimatedOrientation);
 			//std::cout << "Sample ID = " << i << "\tEstimated orientation:\t" << estimatedOrientation << std::endl;

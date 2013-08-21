@@ -9,15 +9,13 @@
 #ifndef HEADER_GUARD___XSENSDATASAMPLE_H__
 #define HEADER_GUARD___XSENSDATASAMPLE_H__
 
-#include <Eigen/Core>
+#include <IMU/Data/Types.h>
 
 namespace IMU {
 
 class XSENSDataSample
 {
 public:
-	//! Typ reprezentuj¹cy próbkê danych pomiarowych 3D
-	typedef Eigen::Matrix<double, 3, 1> Vec3;
 	//! Typ reprezentuj¹cy identyfikator czasu z XSENS
 	typedef unsigned long long int TimeIDType;
 

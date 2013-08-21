@@ -5,6 +5,7 @@ SET_PUBLIC_HEADERS(
 	Data/IMUDataSample.h
 	Data/VICONDataSample.h
 	Data/XSENSDataSample.h
+	Data/Types.h
 	OrientationTestingFramework/CSVTestResultSerializer.h
 	OrientationTestingFramework/IIMUOrientationEstimator.h
 	OrientationTestingFramework/TestingFramework.h

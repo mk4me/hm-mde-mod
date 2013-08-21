@@ -10,6 +10,13 @@ SET_PRIVATE_HEADERS (
 	ITStick.h
 	TStickDrawHelpers.h
 	MainWindow.h
+	IMUWidget.h
+	XSENSDockWidget.h
+	VICONDockWidget.h
+	FitDataDock.h
+	FittingWidget.h
+	FittingWizzard.h
+	OrientationInput.h
 )
 
 SET_SOURCE_FILES (
@@ -21,15 +28,33 @@ SET_SOURCE_FILES (
 	3PointsTStick.cpp
 	TStickDrawHelpers.cpp
 	MainWindow.cpp
+	IMUWidget.cpp
 	main.cpp
+	XSENSDockWidget.cpp
+	VICONDockWidget.cpp
+	FitDataDock.cpp
+	FittingWidget.cpp
+	FittingWizzard.cpp
+	OrientationInput.cpp
 )
 
 SET_MOC_FILES(
 	MainWindow.h	
+	IMUWidget.h
+	XSENSDockWidget.h
+	VICONDockWidget.h
+	FitDataDock.h
+	FittingWidget.h
+	FittingWizzard.h
+	OrientationInput.h
 )
 
 SET_UI_FILES(
 	MainWindow.ui	
+	IMUWidget.ui
+	FittingWidget.ui
+	FittingWizzard.ui
+	OrientationInput.ui
 )
 
 END_PROJECT()

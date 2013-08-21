@@ -25,7 +25,7 @@ public:
 
 	//! \param sample Kolejna próbka z IMU
 	//! \param orientation [out] Estymowana orientacja
-	virtual void estimate(const IMUDataSample & sample, IMUDataSample::Vec3 & orientation) = 0;
+	virtual void estimate(const IMUDataSample & sample, Vec3 & orientation) = 0;
 	
 	//! \return Nazwa algorytmu
 	virtual const std::string name() const = 0;

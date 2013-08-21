@@ -37,4 +37,5 @@ void CustomQOSGWidget::paintEvent( QPaintEvent* event )
 	}
 
 	osgui::QOsgDefaultWidget::paintEvent(event);
+	
 }

@@ -32,9 +32,9 @@ public:
 	void setOffset(const double offset);
 
 	//! \param position Pozucja punktu przeciêcia osi ró¿dzki
-	void setPosition(const IMU::VICONDataSample::Vec3 & position);
+	void setPosition(const IMU::Vec3 & position);
 	//! \param attitude Orientacja ró¿d¿ki
-	void setAttitude(const IMU::VICONDataSample::Vec3 & attitude);
+	void setAttitude(const IMU::Vec3 & attitude);
 
 	//! \param color Kolor sfer reprezentuj¹cych koñce ró¿d¿ki
 	virtual void setSpheresColor(const QColor & color);

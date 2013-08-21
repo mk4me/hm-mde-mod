@@ -1,6 +1,8 @@
 #include "PATTStick.h"
 #include <QuatUtils/QuatUtils.h>
 #include <osg/Geode>
+#include <Eigen/Eigen>
+#include <osgManipulator/TranslateAxisDragger>
 
 PATTStick::PATTStick(const double shortLength, const double longLength,
 	const double offset) : stickNode(new osg::PositionAttitudeTransform)
@@ -9,16 +11,16 @@ PATTStick::PATTStick(const double shortLength, const double longLength,
 
 	auto halfShort = shortLength / 2.0;
 
-	IMU::VICONDataSample::Vec3 posA(-halfShort, 0.0, 0.0);
-	IMU::VICONDataSample::Vec3 posB(halfShort, 0.0, 0.0);
-	IMU::VICONDataSample::Vec3 posC(offset, -longLength, 0.0);
+	IMU::Vec3 posA(-halfShort, 0.0, 0.0);
+	IMU::Vec3 posB(halfShort, 0.0, 0.0);
+	IMU::Vec3 posC(offset, -longLength, 0.0);
 
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[0], posA);
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[1], posB);
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[2], posC);
 
 	SimpleTStickDrawHelper::updateConnection(connections[0], posA, posB);
-	SimpleTStickDrawHelper::updateConnection(connections[1], IMU::VICONDataSample::Vec3(offset, 0.0, 0.0), posC);
+	SimpleTStickDrawHelper::updateConnection(connections[1], IMU::Vec3(offset, 0.0, 0.0), posC);
 }
 
 PATTStick::~PATTStick()
@@ -35,10 +37,10 @@ void PATTStick::setLongLength(const double longLength)
 	auto pos = sferEnds[2].shape->getCenter();
 	pos.y() = -longLength;
 
-	IMU::VICONDataSample::Vec3 posC(pos.x(), pos.y(), pos.z());
+	IMU::Vec3 posC(pos.x(), pos.y(), pos.z());
 
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[2], posC);
-	SimpleTStickDrawHelper::updateConnection(connections[1], IMU::VICONDataSample::Vec3(posC.x(), 0.0, 0.0), posC);
+	SimpleTStickDrawHelper::updateConnection(connections[1], IMU::Vec3(posC.x(), 0.0, 0.0), posC);
 }
 
 void PATTStick::setShortLength(const double shortLength)
@@ -49,8 +51,8 @@ void PATTStick::setShortLength(const double shortLength)
 
 	auto halfShort = shortLength / 2.0;
 
-	IMU::VICONDataSample::Vec3 posA(-halfShort, 0.0, 0.0);
-	IMU::VICONDataSample::Vec3 posB(halfShort, 0.0, 0.0);	
+	IMU::Vec3 posA(-halfShort, 0.0, 0.0);
+	IMU::Vec3 posB(halfShort, 0.0, 0.0);	
 
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[0], posA);
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[1], posB);
@@ -67,24 +69,21 @@ void PATTStick::setOffset(const double offset)
 	auto pos = sferEnds[2].shape->getCenter();
 	pos.x() = offset;
 
-	IMU::VICONDataSample::Vec3 posC(pos.x(), pos.y(), pos.z());
+	IMU::Vec3 posC(pos.x(), pos.y(), pos.z());
 
 	SimpleTStickDrawHelper::setSpherePosition(sferEnds[2], posC);
-	SimpleTStickDrawHelper::updateConnection(connections[1], IMU::VICONDataSample::Vec3(offset, 0.0, 0.0), posC);
+	SimpleTStickDrawHelper::updateConnection(connections[1], IMU::Vec3(offset, 0.0, 0.0), posC);
 }
 
-void PATTStick::setPosition(const IMU::VICONDataSample::Vec3 & position)
+void PATTStick::setPosition(const IMU::Vec3 & position)
 {
 	stickNode->setPosition(osg::Vec3(position.x(), position.y(), position.z()));
 }
 
-void PATTStick::setAttitude(const IMU::VICONDataSample::Vec3 & attitude)
+void PATTStick::setAttitude(const IMU::Vec3 & attitude)
 {
-	osg::Quat rot;
-	osg::QuatUtils::eulerToQuaternion(attitude.x(), attitude.y(), attitude.z(),
-		rot.x(), rot.y(), rot.z(), rot.w());
-
-	stickNode->setAttitude(rot);
+	stickNode->setAttitude(osg::QuatUtils::eulerToQuaternion
+		<osg::Quat,IMU::Vec3>(attitude));
 }
 
 void PATTStick::setSpheresColor(const QColor & color)
@@ -136,5 +135,14 @@ void PATTStick::initialize()
 	geode->addDrawable(connections[1].shapeDrawable);
 
 	stickNode->addChild(geode);
+
+	auto axis = new osgManipulator::TranslateAxisDragger;		
+
+	//domyœlna geometria osi
+	axis->setupDefaultGeometry();
+	axis->setMatrix(osg::Matrix::scale(100.0, 100.0, 100.0));
+	axis->setReferenceFrame(osg::Transform::RELATIVE_RF);
+
+	stickNode->addChild(axis);
 
 }

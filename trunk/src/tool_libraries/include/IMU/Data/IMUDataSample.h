@@ -9,15 +9,13 @@
 #ifndef HEADER_GUARD___IMUDATASAMPLE_H__
 #define HEADER_GUARD___IMUDATASAMPLE_H__
 
-#include <Eigen/Core>
+#include <IMU/Data/Types.h>
 
 namespace IMU {
 
 class IMUDataSample
 {
 public:
-	//! Typ reprezentuj¹cy próbkê danych pomiarowych 3D
-	typedef Eigen::Matrix<double, 3, 1> Vec3;
 	//! Typ reprezentuj¹cy identyfikator czasu z IMU
 	typedef unsigned long long int TimeIDType;
 

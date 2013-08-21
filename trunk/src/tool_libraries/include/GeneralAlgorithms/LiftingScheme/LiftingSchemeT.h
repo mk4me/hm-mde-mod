@@ -161,17 +161,15 @@ Wavelets in Computer Graphics</a>
 
 #include <vector>
 #include <algorithm>
-//#include "DualQuat.h"
+#include <GeneralAlgorithms/LiftingScheme/IndexHelperPolicy.h>
 
-template<class T>
-class LiftingSchemeT {
+namespace LiftingScheme
+{
 
+class LiftingSchemeUtils
+{
 public:
-	typedef std::vector<T> Data;
-    typedef typename Data::size_type size_type;
-
-public:
-
+	//! Wyliczenie opisuj¹ce kierunek transformaty liftingu
 	enum TransDirection { 
 		/** "enumeration" for Forward wavelet transform */
 		Forward = 1,
@@ -179,14 +177,21 @@ public:
 		Inverse = 2 
 	};
 
-protected:
+public:
+
 	/**
 	Split the <i>vec</i> into even and odd elements,
 	where the even elements are in the first half
 	of the vector and the odd elements are in the
 	second half.
 	*/
-	void split( Data& vec, const size_type N ) {
+
+	//! \param vec Kontener z danymi o dostêpie indexowym
+	//! \param N rozmiar od zera do jakiego splitujemy kontener
+	template<class Data>
+	static void split( Data& vec, const typename Data::size_type N ) {
+
+		typedef typename Data::size_type size_type;
 
 		size_type start = 1;
 		size_type end = N - 1;
@@ -208,8 +213,14 @@ protected:
 	of length N.
 
 	*/
-	void merge( Data& vec, const size_type N )
+
+	//! \param vec Kontener z danymi o dostêpie indexowym
+	//! \param N rozmiar od zera do jakiego mergujemy kontener
+	template<class Data>
+	static void merge( Data& vec, const typename Data::size_type N )
 	{
+		typedef typename Data::size_type size_type;
+
 		size_type half = N >> 1;
 		size_type start = half-1;
 		size_type end = half;
@@ -223,6 +234,44 @@ protected:
 		}
 	}
 
+	//! \param value Wartos ktora testujemy
+	//! \return Czy wartoœæ jest potenga dwojki
+	static const bool isPowerOfTwo(const IndexResolver::lint value) {
+		return (value > 0) && !(value & (value-1));
+	}
+
+	static const double log2(const IndexResolver::lint value) {
+		static const double log2value(std::log(2.0f));
+
+		return std::log((double)value) / log2value;
+	}
+
+	//! \param value Wartoœæ testowana
+	//! \return Najwieksza potega dwojki nie wieksza niz testowana wartosc
+	static IndexResolver::ulint floorPowerOfTwo(const IndexResolver::lint value) {
+		
+		if (value <= 2)
+			return value;
+		auto x = (value >> 1) + 1;
+		x |= x >> 1;
+		x |= x >> 2;
+		x |= x >> 4;
+		x |= x >> 8;
+		x |= x >> 16;
+
+		return x+1;
+	}
+
+};
+
+template<class T>
+class LiftingSchemeT {
+
+public:
+	typedef std::vector<T> Data;
+    typedef typename Data::size_type size_type;
+
+protected:
 
 	/** 
 	Predict step, to be defined by the subclass
@@ -232,7 +281,8 @@ protected:
 	@param direction Forward or Inverse transform
 
 	*/
-	virtual void predict( Data& vec, const size_type N, const TransDirection direction ) = 0;
+	virtual void predict( Data& vec, const size_type N,
+		const LiftingSchemeUtils::TransDirection direction ) = 0;
 
 	/**
 	Reverse predict step.  
@@ -246,7 +296,8 @@ protected:
 	frequency analysis algorithms.  The default version
 	of this algorihtm does nothing.
 	*/
-	virtual void predictRev( Data& vec, const size_type N, const TransDirection direction ) {};
+	virtual void predictRev( Data& vec, const size_type N,
+		const LiftingSchemeUtils::TransDirection direction ) {};
 
 
 	/** 
@@ -257,42 +308,27 @@ protected:
 	@param direction Forward or Inverse transform
 
 	*/
-	virtual void update( Data& vec, const size_type N, const TransDirection direction ) = 0;
+	virtual void update( Data& vec, const size_type N,
+		const LiftingSchemeUtils::TransDirection direction ) = 0;
 
 
 	/**
 	Reverse update step
 	*/
-	virtual void updateRev( Data& vec, const size_type N, const TransDirection direction ) {}
+	virtual void updateRev( Data& vec, const size_type N,
+		const LiftingSchemeUtils::TransDirection direction ) {}
 
 public:
-    //! \param Wartos ktora testujemy
-    //! \return Czy wartoœæ jest potenga dwojki
-	static bool isPowerOfTwo(const size_type value) {
-		return value != 0 && !(value & (value-1));
-	}
-
-    //! \param Wartoœæ testowana
-    //! \return Najwieksza potega dwojki nie wieksza niz testowana wartosc
-	static uint floorPowerOfTwo(const size_type value) {
-		static const double log2(std::log(2.0f));
-
-        if(value == 0){
-			return 0;
-		}
-
-		return std::pow(2.0f, (int)std::floor(std::log((float)value) / log2));
-	}
 
 	/**
 	One step in the Forward wavelet transform
 	*/
 	virtual void forwardStep( Data& vec, const size_type N )
 	{
-		BOOST_ASSERT((isPowerOfTwo(N) && N <= vec.size()));
-		split( vec, N );
-		predict( vec, N, Forward );
-		update( vec, N, Forward );
+		BOOST_ASSERT((LiftingSchemeUtils::isPowerOfTwo(N) && N <= vec.size()));
+		LiftingSchemeUtils::split( vec, N );
+		predict( vec, N, LiftingSchemeUtils::Forward );
+		update( vec, N, LiftingSchemeUtils::Forward );
 	} // forwardStep
 
 	/**
@@ -326,7 +362,7 @@ public:
 	*/
 	virtual void forwardTrans( Data& vec, const size_type N )
 	{
-		BOOST_ASSERT((isPowerOfTwo(N) && N <= vec.size()));
+		BOOST_ASSERT((LiftingSchemeUtils::isPowerOfTwo(N) && N <= vec.size()));
 		for (size_type n = N; n > 1; n >>= 1) {
 			forwardStep( vec, n );
 		}
@@ -337,10 +373,10 @@ public:
 	*/
 	virtual void inverseStep( Data& vec, const size_type N )
 	{
-		BOOST_ASSERT((isPowerOfTwo(N) && N <= vec.size()));
-		update( vec, N, Inverse );
-		predict( vec, N, Inverse );
-		merge( vec, N );
+		BOOST_ASSERT((LiftingSchemeUtils::isPowerOfTwo(N) && N <= vec.size()));
+		update( vec, N, LiftingSchemeUtils::Inverse );
+		predict( vec, N, LiftingSchemeUtils::Inverse );
+		LiftingSchemeUtils::merge( vec, N );
 	}
 
 	/** 
@@ -377,98 +413,20 @@ public:
 
 }; // Liftbase
 
-
-//! Klasa pomocnicza przy generowaniu indeksów próbek
-//! Zak³ada okresowoœæ sygna³u - dla próbki mniejszej od 0 generuje próbkê od koñca przedzia³u maj¹c na uwadze d³ugoœæ przedzia³u (modulo)
-//! dla próbki wiêkszej od size - 1 generuje próbkê od pocz¹tku przedzia³u maj¹c na uwadze d³ugoœæ przedzia³u (modulo)
-class PeriodicIndexResolver
-{
-public:
-    inline static unsigned int indexUnderflow(const int idx, const uint size)
-    {
-        BOOST_ASSERT(size > 0);
-        BOOST_ASSERT(idx < 0);
-        return size - std::abs(idx) % size;
-    }
-
-    inline static unsigned int indexOverflow(const int idx, const uint size)
-    {
-        BOOST_ASSERT(size > 0);
-        BOOST_ASSERT(idx >= size);
-        return idx % size;
-    }
-};
-
-//! Klasa pomocnicza przy generowaniu indeksów próbek
-//! Dla indeksów mniejszych od 0 zwraca 0 a dla wiêkszych lub równych size zwraca size - 1
-class BorderIndexResolver
-{
-public:
-    inline static unsigned int indexUnderflow(const int idx, const uint size)
-    {
-        BOOST_ASSERT(size > 0);
-        BOOST_ASSERT(idx < 0);
-        return 0;
-    }
-
-    inline static unsigned int indexOverflow(const int idx, const uint size)
-    {
-        BOOST_ASSERT(size > 0);
-        BOOST_ASSERT(idx >= size);
-        return size - 1;
-    }
-};
-
-template <class T, class IndexResolver = PeriodicIndexResolver>
-class LiftingTransformWithIndexHelper : public Liftbase<T>, public IndexResolver
-{
-public:
-    inline static typename Data::size_type index(const int idx, const size_type size)
-    {
-        Data::size_type ret(idx);
-        if(idx < 0){
-            ret = IndexResolver::indexUnderflow(idx, size);
-        }else if(idx >= size){
-            ret = IndexResolver::indexOverflow(idx, size);
-        }
-        
-        BOOST_ASSERT((ret >= 0 && ret < size), "B³edny indeks");
-
-        return ret;
-    }
-};
-
-template <class T, class IndexResolver = PeriodicIndexResolver>
-class LiftingTransformWithPreUpdate : public LiftingTransformWithIndexHelper<T, IndexResolver>
-{
-public:
-    virtual void forwardStep( Data& vec, const uint N )
-    {
-        BOOST_ASSERT((isPowerOfTwo(N) && N <= vec.size()));
-        split( vec, N );
-        preUpdate(vec, N, Forward);
-        predict( vec, N, Forward );
-        update( vec, N, Forward );
-    } // forwardStep
+template <class T, template<typename> class Interpolator, class IR = PeriodicIndexResolver>
+class InterpolatorLiftingSchemeT : public LiftingSchemeT<T> {
 
 protected:
-
-    virtual void preUpdate(Data& vec, const uint N, const TransDirection direction) = 0;
-};
-
-
-template <class T, class Interpolator, class IndexResolver = PeriodicIndexResolver>
-class LiftTrans : public LiftingTransformWithIndexHelper<T, IndexResolver>, public Interpolator {
-
-protected:
-	virtual void predict( Data& vec, const uint N, const TransDirection direction ){
-		Interpolator::interpolate(vec, N, direction);
+	virtual void predict( Data& vec, const size_type N, const LiftingSchemeUtils::TransDirection direction ){
+		Interpolator<LiftingSchemeIndexHelper<IR>>::interpolate(vec, N, direction);
 	}
 
-	virtual void update( Data& vec, const uint N, const TransDirection direction ){
-		Interpolator::update(vec, N, direction);
+	virtual void update( Data& vec, const size_type N, const LiftingSchemeUtils::TransDirection direction ){
+		Interpolator<LiftingSchemeIndexHelper<IR>>::update(vec, N, direction);
 	}
 
 };
+
+}
 
 #endif	//	HEADER_GUARD_ALGO__LIFTINGSCHEMET_H__

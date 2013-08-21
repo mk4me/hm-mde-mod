@@ -37,7 +37,7 @@ public:
 
 	//! \param sample Kolejna próbka z IMU
 	//! \param orientation [out] Estymowana orientacja
-	virtual void estimate(const IMU::IMUDataSample & sample, IMU::IMUDataSample::Vec3 & orientation)
+	virtual void estimate(const IMU::IMUDataSample & sample, IMU::Vec3 & orientation)
 	{
 		orientation.x() = sample.gyroscopeSample().x();
 		orientation.y() = sample.gyroscopeSample().y();
@@ -115,7 +115,7 @@ int main( int argc, char **argv )
 	IMU::IMUDataReader imuReader(imuDataFile);
 	IMU::IMUDataSample imuSample;
 
-	while(imuReader.readNextSample(imuSample) == IMU::UniversalDataReader<IMU::IMUDataSample>::RESULT_OK){
+	while(imuReader.readNextSample(imuSample) == IMU::UniversalDataReaderBase::RESULT_OK){
 		imuSamples.push_back(imuSample);		
 	}	
 
@@ -123,7 +123,7 @@ int main( int argc, char **argv )
 	IMU::XSENSDataReader xsensReader(xsensDataFile);
 	IMU::XSENSDataSample xsensSample;
 
-	while(xsensReader.readNextSample(xsensSample) == IMU::UniversalDataReader<IMU::XSENSDataSample>::RESULT_OK){
+	while(xsensReader.readNextSample(xsensSample) == IMU::UniversalDataReaderBase::RESULT_OK){
 		orientationSamples.push_back(xsensSample.estimatedOrientationSample());
 	}
 

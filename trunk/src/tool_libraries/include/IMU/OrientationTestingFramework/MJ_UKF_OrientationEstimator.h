@@ -9,6 +9,7 @@
 #ifndef HEADER_GUARD___MJ_UKF_ORIENTATIONESTIMATOR_H__
 #define HEADER_GUARD___MJ_UKF_ORIENTATIONESTIMATOR_H__
 
+#include <IMU/Data/Types.h>
 #include <IMU/OrientationTestingFramework/IIMUOrientationEstimator.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -30,11 +31,6 @@ private:
 
 private:
 
-	//! Typ kwaternionu
-	typedef Eigen::Quaternion<double> Quat;
-	//! Typ wektora 3D
-	typedef Eigen::Matrix<double, 3, 1> Vec3;
-
 	//! Typ opisuj¹cy stan procesu
 	//! Pierwsze 4 elementy wektora to kwaternion orientacji:
 	//! x, y, z, w, zas kolejne 3 to prêdkoœci k¹towe cia³a
@@ -43,9 +39,9 @@ private:
 	//! Struktura opisuj¹ca stan procesu
 	struct StateType {
 		//! Orientacja cia³a
-		Quat orientation;
+		IMU::Quat orientation;
 		//! Prêdkoœci k¹towe cia³¹
-		Vec3 angularVelocities;
+		IMU::Vec3 angularVelocities;
 	};
 
 	//! Stan w formie wektora
@@ -58,27 +54,27 @@ private:
 	//! Agregat projekcji pomiarów dla punktów sigma stanu
 	typedef boost::array<MeasurementsVector, SigmaPointsSize> ProjectedMeasurements;
 	//! Agregat ró¿nic orientacji wzglêdem estymowanego stanu apriori
-	typedef boost::array<Quat, SigmaPointsSize> OrientationErrors;
+	typedef boost::array<IMU::Quat, SigmaPointsSize> OrientationErrors;
 	//! Macierz wzmocnienia kalmana
 	typedef Eigen::Matrix<double, StateSize, MeasurementSize> KalmanGainMatrix;
 
 private:
 	//! \param state Stan cia³a
 	//! \return Kwaternion orientacji
-	static const Quat getOrientation(const StateType & state);
+	static const IMU::Quat getOrientation(const StateType & state);
 	//! \param state Stan cia³a
 	//! \return Wektor prêdkoœci k¹towych cia³a
-	static const Vec3 getAngularVelocities(const StateType & state);
+	static const IMU::Vec3 getAngularVelocities(const StateType & state);
 	//! \param state Stan cia³a
 	//! \param orientation Kwaternion orientacji
-	static void updateOrientation(StateType & state, const Quat & orientation);
+	static void updateOrientation(StateType & state, const IMU::Quat & orientation);
 	//! \param state Stan cia³a
 	//! \param angularVelocities Wektor prêdkoœci k¹towych cia³a
-	static void updateAngularVelocities(StateType & state, const Vec3 & angularVelocities);
+	static void updateAngularVelocities(StateType & state, const IMU::Vec3 & angularVelocities);
 	//! Metoda przelicza kwaternion do postaci k¹tów Yaw Pitch Roll
 	//! \param quat Kwaternion opisuj¹cy zmianê
 	//! \return Wektor 3D w formie Yaw Pitch Roll
-	static Vec3 quatToYawPitchRoll(const Quat & quat);
+	static IMU::Vec3 quatToYawPitchRoll(const IMU::Quat & quat);
 
 
 public:
@@ -118,7 +114,7 @@ public:
 
 	//! \param sample Kolejna próbka z IMU
 	//! \param orientation [out] Estymowana orientacja
-	virtual void estimate(const IMU::IMUDataSample & sample, IMU::IMUDataSample::Vec3 & orientation);
+	virtual void estimate(const IMU::IMUDataSample & sample, IMU::Vec3 & orientation);
 	
 	//! \return Nazwa algorytmu
 	virtual const std::string name() const;
@@ -131,12 +127,12 @@ private:
 	//! \param angularVelocity Prêdkoœc k¹towa cia³a
 	//! \param dt Czas trwania obrotu cia³a
 	//! \return Kwaternion koduj¹cy zmianê orientacji
-	static const Quat orientationChange(const Vec3 & angularVelocity, const double dt);
+	static const IMU::Quat orientationChange(const IMU::Vec3 & angularVelocity, const double dt);
 
 	//! Metoda zamienia wektor 3D na kwaternion
 	//! \param vec Wektor 3D
 	//! \return Kwaternion powsta³y z wektora 3D
-	static const Quat convert(const Vec3 & vec);
+	static const IMU::Quat convert(const IMU::Vec3 & vec);
 
 	//! Funkcja przejœci aprocesu
 	//! \param previousState Poprzedni stan procesu

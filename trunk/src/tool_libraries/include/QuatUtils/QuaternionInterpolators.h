@@ -1,278 +1,316 @@
 #ifndef _QUATINTERPOLATORS_H_
 #define _QUATINTERPOLATORS_H_
 
-#include "DualQuatUtils.h"
-#include "liftbase.h"
+#include <GeneralAlgorithms/LiftingScheme/LiftingSchemeT.h>
+#include <QuatUtils/QuatUtils.h>
+#include <osg/Vec3>
 #include <boost/assert.hpp>
 
+namespace QuatUtils
+{
+
+typedef osg::Quat Quat;
+
+typedef LiftingScheme::LiftingSchemeT<Quat> QuatLiftingScheme;
+typedef LiftingScheme::LiftingSchemeT<osg::Vec3> Vec3LiftingScheme;
+
+typedef LiftingScheme::IndexResolver::ulint uint;
+
+template<class IndexHelper>
 class QuatLinHaarInterpolator
 {
 public:
-	 void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-		uint half = N >> 1;
+	
+	static void interpolate(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		 const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+		
+		const uint half = N >> 1;
 
 		for(uint i = 0; i < half; i++){
-			uint j = half + i;
-			if(direction == LiftQuat::Forward){
+			const uint j = half + i;
+			if(direction == LiftingScheme::LiftingSchemeUtils::TransDirection::Forward){
 				vec[j] -= vec[i];
-			}else if(direction == LiftQuat::Inverse){
+			}else if(direction == LiftingScheme::LiftingSchemeUtils::TransDirection::Inverse){
 				vec[j] += vec[i];
 			}
 
-			vec[j] = osg::DualQuatUtils::normalize(vec[j]);
+			vec[j] = osg::QuatUtils::normalize(vec[j]);
 		}
 	}
 
-	 void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-		uint half = N >> 1;
+	static void update(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		 const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+		
+		const uint half = N >> 1;
 
 		for(uint i = 0; i < half; i++){
-			uint j = half + i;
-            osg::DualQuat updateValue(vec[j]/2);
-			if(direction == LiftQuat::Forward){
+			const uint j = half + i;
+            const Quat updateValue(vec[j]/2);
+			if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
 				vec[i] += updateValue;
-			}else if(direction == LiftQuat::Inverse){
+			}else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
 				vec[i] -= updateValue;
 			}
 
-			vec[i] = osg::DualQuatUtils::normalize(vec[i]);
+			vec[i] = osg::QuatUtils::normalize(vec[i]);
 		}
 	}
 };
 
-class QuatLinHaarInterpolatorSlerpAverage
-{
-public:
-     void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
-
-        for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            if(direction == LiftQuat::Forward){
-                vec[j] -= vec[i];
-            }else if(direction == LiftQuat::Inverse){
-                vec[j] += vec[i];
-            }
-
-            vec[j] = osg::DualQuatUtils::normalize(vec[j]);
-        }
-    }
-
-     void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
-
-        for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            if(direction == LiftQuat::Forward){
-                osg::DualQuat updateValue(vec[j] + vec[i]);
-                vec[i] = osg::DualQuatUtils::slerp(vec[i], updateValue, 0.5);
-            }else if(direction == LiftQuat::Inverse){
-                osg::DualQuat updateValue(vec[j] - vec[i]);
-                vec[i] = osg::DualQuatUtils::pow(osg::DualQuatUtils::normalize(updateValue * vec[i]), 2.0);
-            }
-
-            vec[i] = osg::DualQuatUtils::normalize(vec[i]);
-        }
-    }
-};
-
+template<class IndexHelper>
 class QuatHaarInterpolator
 {
 public:
-	 void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-		uint half = N >> 1;
+	static  void interpolate(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+		
+		const uint half = N >> 1;
 
 		for(uint i = 0; i < half; i++){
-			uint j = half + i;
-			if(direction == LiftQuat::Forward){
+			const uint j = half + i;
+			if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
 				vec[j] /= vec[i];
-			}else if(direction == LiftQuat::Inverse){
+			}else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
 				vec[j] *= vec[i];
 			}
 
-			vec[j] = osg::DualQuatUtils::normalize(vec[j]);
+			//vec[j] = osg::QuatUtils::normalize(vec[j]);
 		}
 	}
 
-	 void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-		uint half = N >> 1;
+	static void update(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+		
+		const uint half = N >> 1;
 
 		for(uint i = 0; i < half; i++){
-			uint j = half + i;
-			if(direction == LiftQuat::Forward){
-				vec[i] = osg::DualQuatUtils::pow(osg::DualQuatUtils::normalize(vec[j]), 0.5) * vec[i];
-			}else if(direction == LiftQuat::Inverse){
-				vec[i] = osg::DualQuatUtils::pow(osg::DualQuatUtils::normalize(vec[j]), 0.5).inverse() * vec[i];
+			const uint j = half + i;
+			if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
+				//vec[i] = osg::QuatUtils::pow(osg::QuatUtils::normalize(vec[j]), 0.5) * vec[i];
+				vec[i] = osg::QuatUtils::pow(vec[j], 0.5) * vec[i];
+			}else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
+				//vec[i] = osg::QuatUtils::pow(osg::QuatUtils::normalize(vec[j]), 0.5).inverse() * vec[i];
+				vec[i] = osg::QuatUtils::pow(vec[j], 0.5).inverse() * vec[i];
 			}
 
-			vec[i] = osg::DualQuatUtils::normalize(vec[i]);
+			//vec[i] = osg::QuatUtils::normalize(vec[i]);
 		}
 	}
 };
 
+template<class IndexHelper>
 class QuatLerpInterpolator
 {
 public:
-     void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
+	static void interpolate(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+        
+		const uint half = N >> 1;
 
         for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            osg::DualQuat predValue((vec[i] + vec[(i+1)%half])/2);
-            if(direction == LiftQuat::Forward){
+            const uint j = half + i;
+            const osg::Quat predValue((vec[i] + vec[IndexHelper::index(i+1,half)])/2);
+            if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
                 vec[j] -= predValue;
-            }else if(direction == LiftQuat::Inverse){
+            }else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
                 vec[j] += predValue;
             }
 
-            vec[j] = osg::DualQuatUtils::normalize(vec[j]);
+            vec[j] = osg::QuatUtils::normalize(vec[j]);
         }
     }
 
-     void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
+	static void update(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+        
+		const uint half = N >> 1;
+		const uint lessHalf = half - 1;
 
         for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            osg::DualQuat updateValue((vec[j] + vec[half + ((j-1) % half)])/4);
-            if(direction == LiftQuat::Forward){
+            const uint j = half + i;
+            const osg::Quat updateValue((vec[j] + vec[IndexHelper::index(lessHalf + i, N, half)])/4);
+            if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
                 vec[i] += updateValue;
-            }else if(direction == LiftQuat::Inverse){
+            }else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
                 vec[i] -= updateValue;
             }
 
-            vec[i] = osg::DualQuatUtils::normalize(vec[i]);
+            vec[i] = osg::QuatUtils::normalize(vec[i]);
         }
     }
 };
 
-class QuatLerpInterpolatorSlerpAvarage
-{
-public:
-     void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
-
-        for(uint i = 0; i < half - 1; i++){
-            uint j = half + i;
-            osg::DualQuat predValue((vec[i] + vec[(i+1)%half])/2);
-            if(direction == LiftQuat::Forward){
-                vec[j] -= predValue;
-            }else if(direction == LiftQuat::Inverse){
-                vec[j] += predValue;
-            }
-
-            vec[j] = osg::DualQuatUtils::normalize(vec[j]);
-        }
-    }
-
-     void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
-
-        for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            osg::DualQuat updateValue(vec[j] + (vec[i] + vec[(half + i-1)%half]) / 2.0);
-            if(direction == LiftQuat::Forward){ 
-                vec[i] = osg::DualQuatUtils::pow(osg::DualQuatUtils::normalize(updateValue * vec[i]), 0.5);
-            }else if(direction == LiftQuat::Inverse){
-  //              BOOST_ASSERT((false));
-            }
-
-            vec[i] = osg::DualQuatUtils::normalize(vec[i]);
-        }
-    }
-};
-
-class QuatLerpQuatInterpolator
-{
-public:
-     void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
-        
-        for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            osg::DualQuat predValue(osg::DualQuatUtils::pow(osg::DualQuatUtils::normalize(vec[(i + 1)%half] * vec[i]), 0.5));
-            if(direction == LiftQuat::Forward){
-                vec[j] /= predValue;
-            }else if(direction == LiftQuat::Inverse){
-                vec[j] *= predValue;
-            }
-
-            vec[j] = osg::DualQuatUtils::normalize(vec[j]);
-        }
-    }
-
-     void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
-
-        for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            osg::DualQuat updateVal(osg::DualQuatUtils::pow(osg::DualQuatUtils::normalize(vec[j] * vec[half + ((j-1) % half)]), 0.25));
-            if(direction == LiftQuat::Forward){
-                vec[i] = osg::DualQuatUtils::pow(updateVal * vec[i], 0.5);
-            }else if(direction == LiftQuat::Inverse){
-                vec[i] = osg::DualQuatUtils::pow(vec[i], 2.0) / updateVal;
-            }
-
-            vec[i] = osg::DualQuatUtils::normalize(vec[i]);
-        }
-    }
-};
-
+template<class IndexHelper>
 class QuatSlerpInterpolator
 {
 public:
-     void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
+	static void interpolate(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+        
+		const uint half = N >> 1;
 
         for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            osg::DualQuat predValue;
-            predValue.slerp(0.5, vec[i], vec[(i+1)%half]);
-            if(direction == LiftQuat::Forward){
+            const uint j = half + i;
+            osg::Quat predValue;
+            predValue.slerp(0.5, vec[i], vec[IndexHelper::index(i+1,half)]);
+            if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
                 vec[j] = predValue.inverse() * vec[j];
-            }else if(direction == LiftQuat::Inverse){
+            }else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
                 vec[j] = predValue * vec[j];
             }
 
-            vec[j] = osg::DualQuatUtils::normalize(vec[j]);
+            //vec[j] = osg::QuatUtils::normalize(vec[j]);
         }
     }
 
-     void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
-        uint half = N >> 1;
+	static void update(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+        
+		const uint half = N >> 1;
+		const uint lessHalf = half - 1;
 
         for(uint i = 0; i < half; i++){
-            uint j = half + i;
-            osg::DualQuat updateVal;
-            updateVal.slerp(0.5, vec[half + ((j-1) % half)], vec[j]);
-            updateVal = osg::DualQuatUtils::normalize(updateVal);
-            if(direction == LiftQuat::Forward){
-                vec[i] = vec[i] * osg::DualQuatUtils::pow(updateVal, 0.5);
-            }else if(direction == LiftQuat::Inverse){
-                vec[i] = vec[i] * osg::DualQuatUtils::pow(updateVal, -0.5);
+            const uint j = half + i;
+            osg::Quat updateVal;
+            updateVal.slerp(0.5, vec[IndexHelper::index(lessHalf + i, N, half)], vec[j]);
+            //updateVal = osg::QuatUtils::normalize(updateVal);
+            if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
+                vec[i] = vec[i] * osg::QuatUtils::pow(updateVal, 0.5);
+            }else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
+                vec[i] = vec[i] * osg::QuatUtils::pow(updateVal, -0.5);
             }
 
-            vec[i] = osg::DualQuatUtils::normalize(vec[i]);
+            //vec[i] = osg::QuatUtils::normalize(vec[i]);
         }
     }
 };
+
+template<class IndexHelper>
+class TangentSpaceQuatInterpolator
+{
+public:
+	
+	static void interpolate(Vec3LiftingScheme::Data & vec, const Vec3LiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+	
+		const uint half = N >> 1;
+
+		for (uint i = 0; i < half; i++) {
+			const uint j = i + half;
+			const osg::Vec3d predictVal = vec[IndexHelper::index(i+1,half)] * 0.5625 + vec[IndexHelper::index(i+2,half)] * 0.5625 - vec[i] * 0.0625 - vec[IndexHelper::index(i+3,half)] * 0.0625;
+
+			if (direction == LiftingScheme::LiftingSchemeUtils::Forward) {
+				vec[j] -= predictVal;
+			}
+			else if (direction == LiftingScheme::LiftingSchemeUtils::Inverse) {
+				vec[j] += predictVal;
+			}
+		}
+	}
+
+	static void update(Vec3LiftingScheme::Data & vec, const Vec3LiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
+	
+		const uint half = N >> 1;
+
+		for(uint i = 0; i < half; i++){
+			const uint j = i + half;
+			const osg::Vec3d updateVal = vec[j] / 2.0;
+
+			if (direction == LiftingScheme::LiftingSchemeUtils::Forward) {
+				vec[i] += updateVal;
+			}
+			else if (direction == LiftingScheme::LiftingSchemeUtils::Inverse) {
+				vec[i] -= updateVal;
+			}
+		}
+	}
+};
+
+template<class IR = LiftingScheme::PeriodicIndexResolver>
+class PseudoQuatTangentLiftingScheme : public QuatLiftingScheme
+{
+private:
+
+	typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Vec3,
+		TangentSpaceQuatInterpolator, IR> TangentSpaceLiftingScheme;
+
+protected:
+
+	static void quatToTangentSpace(const Data & src, Vec3LiftingScheme::Data & dest)
+	{
+		for(auto it = src.begin(); it != src.end(); it++){
+			dest.push_back(osg::QuatUtils::log(*it).asVec3());
+		}
+	}
+
+	static void tangentSpaceToQuat(const Vec3LiftingScheme::Data & src, Data & dest)
+	{
+		for(int i = 0; i < src.size(); i++){
+			dest[i] = osg::QuatUtils::exp(osg::Quat(src[i].x(), src[i].y(), src[i].z(), 0));
+		}
+	}
+
+	virtual void predict( Data& vec, const size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction )
+	{
+
+	}
+
+	virtual void update( Data& vec, const size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction )
+	{
+
+	}
+
+public:
+
+	virtual void forwardTrans( Data& vec, const uint N )
+	{
+		
+		TangentSpaceLiftingScheme tangentLifting;
+		TangentSpaceLiftingScheme::Data data;
+
+		quatToTangentSpace(vec, data);
+
+		tangentLifting.forwardTrans(data, N);
+
+		tangentSpaceToQuat(data, vec);
+	}
+
+	virtual void inverseTrans( Data& vec, const uint N )
+	{
+		TangentSpaceLiftingScheme tangentLifting;
+		TangentSpaceLiftingScheme::Data data;
+
+		quatToTangentSpace(vec, data);
+
+		tangentLifting.inverseTrans(data, N);
+
+		tangentSpaceToQuat(data, vec);
+	}
+
+
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+template<class IndexHelper>
 class QuatQuadInterpolator
 {
 public:
-	 void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
+	void interpolate(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
 		uint half = N >> 1;
 		
-		vec[half] /= osg::DualQuatUtils::squad(vec[0], vec[0], osg::DualQuatUtils::spline(vec[0],vec[0],vec[1]), 
-			osg::DualQuatUtils::spline(vec[0],vec[1],vec[2]), 0.5);
+		vec[half] /= osg::QuatUtils::squad(vec[0], vec[0], osg::QuatUtils::spline(vec[0],vec[0],vec[1]), 
+			osg::QuatUtils::spline(vec[0],vec[1],vec[2]), 0.5);
 		
 		for(uint i = 1; i < half - 2; i++){
 			uint j = half + i;
-			osg::DualQuat predValue(osg::DualQuatUtils::squad(vec[i-1], vec[i], osg::DualQuatUtils::spline(vec[i-1],vec[i],vec[i+1]), 
-				osg::DualQuatUtils::spline(vec[i],vec[i+1],vec[i+2]), 0.5));
+			osg::Quat predValue(osg::QuatUtils::squad(vec[i-1], vec[i], osg::QuatUtils::spline(vec[i-1],vec[i],vec[i+1]), 
+				osg::QuatUtils::spline(vec[i],vec[i+1],vec[i+2]), 0.5));
 			if(direction == LiftQuat::Forward){
 				vec[j] /= predValue;
 			}else if(direction == LiftQuat::Inverse){
@@ -280,11 +318,11 @@ public:
 			}
 		}
 
-		osg::DualQuat predValueA(osg::DualQuatUtils::squad(vec[N-2], vec[N-1], osg::DualQuatUtils::spline(vec[N-3],vec[N-2],vec[N-1]), 
-			osg::DualQuatUtils::spline(vec[N-2],vec[N-1],vec[N-1]), 0.5));
+		osg::Quat predValueA(osg::QuatUtils::squad(vec[N-2], vec[N-1], osg::QuatUtils::spline(vec[N-3],vec[N-2],vec[N-1]), 
+			osg::QuatUtils::spline(vec[N-2],vec[N-1],vec[N-1]), 0.5));
 
-		osg::DualQuat predValueB(osg::DualQuatUtils::squad(vec[N-1], vec[N-1], osg::DualQuatUtils::spline(vec[N-2],vec[N-1],vec[N-1]), 
-			osg::DualQuatUtils::spline(vec[N-1],vec[N-1],vec[N-1]), 0.5));
+		osg::Quat predValueB(osg::QuatUtils::squad(vec[N-1], vec[N-1], osg::QuatUtils::spline(vec[N-2],vec[N-1],vec[N-1]), 
+			osg::QuatUtils::spline(vec[N-1],vec[N-1],vec[N-1]), 0.5));
 
 		if(direction == LiftQuat::Forward){
 			vec[N-2] /= predValueA;
@@ -296,25 +334,27 @@ public:
 
 	}
 
-	 void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
+	void update(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
 
 	}
 };
 
-
+template<class IndexHelper>
 class QuatBezierInterpolator
 {
 public:
-	 void interpolate(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
+	void interpolate(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
 		uint half = N >> 1;
 		
-		vec[half] /= osg::DualQuatUtils::bezier(vec[0], vec[0], osg::DualQuatUtils::spline(vec[0],vec[0],vec[1]), 
-			osg::DualQuatUtils::spline(vec[0],vec[1],vec[2]), 0.5);
+		vec[half] /= osg::QuatUtils::bezier(vec[0], vec[0], osg::QuatUtils::spline(vec[0],vec[0],vec[1]), 
+			osg::QuatUtils::spline(vec[0],vec[1],vec[2]), 0.5);
 
 		for(uint i = 1; i < half - 2; i++){
 			uint j = half + i;
-			osg::DualQuat predValue(osg::DualQuatUtils::bezier(vec[i-1], vec[i], osg::DualQuatUtils::spline(vec[i-1],vec[i],vec[i+1]), 
-				osg::DualQuatUtils::spline(vec[i],vec[i+1],vec[i+2]), 0.5));
+			osg::Quat predValue(osg::QuatUtils::bezier(vec[i-1], vec[i], osg::QuatUtils::spline(vec[i-1],vec[i],vec[i+1]), 
+				osg::QuatUtils::spline(vec[i],vec[i+1],vec[i+2]), 0.5));
 			if(direction == LiftQuat::Forward){
 				vec[j] /= predValue;
 			}else if(direction == LiftQuat::Inverse){
@@ -322,11 +362,11 @@ public:
 			}
 		}
 
-		osg::DualQuat predValueA(osg::DualQuatUtils::bezier(vec[N-2], vec[N-1], osg::DualQuatUtils::spline(vec[N-3],vec[N-2],vec[N-1]), 
-			osg::DualQuatUtils::spline(vec[N-2],vec[N-1],vec[N-1]), 0.5));
+		osg::Quat predValueA(osg::QuatUtils::bezier(vec[N-2], vec[N-1], osg::QuatUtils::spline(vec[N-3],vec[N-2],vec[N-1]), 
+			osg::QuatUtils::spline(vec[N-2],vec[N-1],vec[N-1]), 0.5));
 
-		osg::DualQuat predValueB(osg::DualQuatUtils::bezier(vec[N-1], vec[N-1], osg::DualQuatUtils::spline(vec[N-2],vec[N-1],vec[N-1]), 
-			osg::DualQuatUtils::spline(vec[N-1],vec[N-1],vec[N-1]), 0.5));
+		osg::Quat predValueB(osg::QuatUtils::bezier(vec[N-1], vec[N-1], osg::QuatUtils::spline(vec[N-2],vec[N-1],vec[N-1]), 
+			osg::QuatUtils::spline(vec[N-1],vec[N-1],vec[N-1]), 0.5));
 
 		if(direction == LiftQuat::Forward){
 			vec[N-2] /= predValueA;
@@ -337,10 +377,13 @@ public:
 		}
 	}
 
-	 void update(LiftQuat::Data & vec, const LiftQuat::size_type N, const LiftQuat::TransDirection direction){
+	void update(QuatLiftingScheme::Data & vec, const QuatLiftingScheme::size_type N,
+		const LiftingScheme::LiftingSchemeUtils::TransDirection direction){
 
 	}
 };
+
+}
 
 #endif
 

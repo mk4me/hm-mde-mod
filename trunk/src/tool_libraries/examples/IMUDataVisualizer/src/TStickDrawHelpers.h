@@ -38,22 +38,22 @@ public:
 	static const ShpereDescription createSphere();
 
 	//! \param position Pozycja danego punktu ró¿d¿ki
-	static void setSpherePosition(ShpereDescription & sphere, const IMU::VICONDataSample::Vec3 & position);
+	static void setSpherePosition(ShpereDescription & sphere, const IMU::Vec3 & position);
 
 	//! \param color Kolor sfer reprezentuj¹cych koñce ró¿d¿ki
 	static void setSphereColor(ShpereDescription & sphere, const QColor & color);
 	//! \param radius Promieñ sfer reprezentuj¹cych koñce ró¿d¿ki
 	static void setSphereRadius(ShpereDescription & sphere, const double radius);
 	//! \param color Kolor po³¹czeñ w ró¿d¿ce
-	static void setConnectionColor(CylinderDescription & conneciton, const QColor & color);
+	static void setConnectionColor(CylinderDescription & connection, const QColor & color);
 	//! \param radius Promieñ po³¹czeñ w ró¿d¿ce
-	static void setConnectionRadius(CylinderDescription & conneciton, const double radius);
+	static void setConnectionRadius(CylinderDescription & connection, const double radius);
 	//! \param conneciton Po³¹czenie którego pozycjê aktualizujemy
 	//! \param a Pierwsza pozycj¹ któr¹ ³¹czy po³¹czenie
 	//! \param b Druga pozycj¹ któr¹ ³¹czy po³¹czenie
 	static void updateConnection(CylinderDescription & connection,
-		const IMU::VICONDataSample::Vec3 & a,
-		const IMU::VICONDataSample::Vec3 & b);
+		const IMU::Vec3 & a,
+		const IMU::Vec3 & b);
 
 
 };

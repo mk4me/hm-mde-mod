@@ -52,7 +52,6 @@
     <property name="title">
      <string>Narzędzia</string>
     </property>
-    <addaction name="actionWyznacz_orientacje_VICON"/>
     <addaction name="actionDopasuj_VICON_z_XSENS"/>
     <addaction name="actionFiltruj"/>
    </widget>
@@ -174,9 +173,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionDopasuj_VICON_z_XSENS</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>fitVICON_XSENS()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>loadXSENSData()</slot>
   <slot>loadVICONData()</slot>
+  <slot>fitVICON_XSENS()</slot>
  </slots>
 </ui>

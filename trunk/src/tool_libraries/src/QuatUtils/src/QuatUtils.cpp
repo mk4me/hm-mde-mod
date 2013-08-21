@@ -129,33 +129,3 @@ const Quat QuatUtils::spline(const Quat &qnm1, const Quat &qn, const Quat &qnp1)
 	Quat qni(qn.conj());	
 	return qn * exp(( log(qni * qnm1) + log(qni * qnp1)) / -4.0);
 }
-
-void QuatUtils::quaterionToEuler(const double x, const double y,
-	const double z, const double w, double & roll, double & pitch,
-	double & yaw)
-{
-	roll = std::atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (std::pow(x, 2.0) + std::pow(y, 2.0)));
-	pitch = std::asin(2.0 * (w * y - x * z));
-	yaw = std::atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (std::pow(y, 2.0) + std::pow(z, 2.0)));
-}
-
-void QuatUtils::eulerToQuaternion(const double roll, const double pitch,
-	const double yaw, double & x, double & y, double & z, double & w)
-{
-	Vec3d halfEuler(roll, pitch, yaw);
-	halfEuler /= 2.0;
-	double c1 = std::cos(halfEuler.z());
-	double s1 = std::sin(halfEuler.z());
-	double c2 = std::cos(halfEuler.y());
-	double s2 = std::sin(halfEuler.y());
-	double c3 = std::cos(halfEuler.x());
-	double s3 = std::sin(halfEuler.x());
-	double c1c2 = c1*c2;
-	double s1s2 = s1*s2;
-	double c1s2 = c1*s2;
-	double s1c2 = s1*c2;
-	w = c1c2*c3 - s1s2*s3;
-	x = c1c2*s3 + s1s2*c3;
-	y = s1c2*c3 + c1s2*s3;
-	z = c1s2*c3 - s1c2*s3;
-}

@@ -10,6 +10,8 @@ SET_PUBLIC_HEADERS(
 	KalmanFilters/UKF.h
 	UnscentedTransform/UnscentedTransform.h
 	DTW/DTW.h
+	LiftingScheme/LiftingSchemeT.h
+	LiftingScheme/IndexHelperPolicy.h
 )
 
 SET_SOURCE_FILES(

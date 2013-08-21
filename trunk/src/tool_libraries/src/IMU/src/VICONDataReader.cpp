@@ -28,14 +28,14 @@ const ICSVParser::ConversionResultType VICONDataReader::convert(const ICSVParser
 
 	// identyfikator czasu
 	VICONDataSample::TimeIDType timeID = 0;	
-	VICONDataSample::Vec3 m1;
-	VICONDataSample::Vec3 m2;
-	VICONDataSample::Vec3 m3;
-	VICONDataSample::Vec3 m4;
-	VICONDataSample::Vec3 m5;
-	VICONDataSample::Vec3 m6;
+	Vec3 m1;
+	Vec3 m2;
+	Vec3 m3;
+	Vec3 m4;
+	Vec3 m5;
+	Vec3 m6;
 	
-
+	
 	if(ICSVParser::convert(lineData, 0, timeID) == ICSVParser::CONVERSION_OK &&		
 		ICSVParser::convert(lineData, 2, m1.x()) == ICSVParser::CONVERSION_OK &&
 		ICSVParser::convert(lineData, 3, m1.y()) == ICSVParser::CONVERSION_OK &&
@@ -55,6 +55,28 @@ const ICSVParser::ConversionResultType VICONDataReader::convert(const ICSVParser
 		ICSVParser::convert(lineData, 17, m6.x()) == ICSVParser::CONVERSION_OK &&
 		ICSVParser::convert(lineData, 18, m6.y()) == ICSVParser::CONVERSION_OK &&
 		ICSVParser::convert(lineData, 19, m6.z()) == ICSVParser::CONVERSION_OK) {
+		
+
+	/*
+	if(ICSVParser::convert(lineData, 0, timeID) == ICSVParser::CONVERSION_OK &&		
+		ICSVParser::convert(lineData, 2, m1.x()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 3, m1.z()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 4, m1.y()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 5, m2.x()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 6, m2.z()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 7, m2.y()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 8, m3.x()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 9, m3.z()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 10, m3.y()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 11, m4.x()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 12, m4.z()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 13, m4.y()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 14, m5.x()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 15, m5.z()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 16, m5.y()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 17, m6.x()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 18, m6.z()) == ICSVParser::CONVERSION_OK &&
+		ICSVParser::convert(lineData, 19, m6.y()) == ICSVParser::CONVERSION_OK) {*/
 
 
 			viconDataSample.setTimeID(timeID);

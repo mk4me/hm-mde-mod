@@ -13,17 +13,23 @@
 #include <QtCore/QtCore>
 #include <QtGui/QStatusBar>
 #include <boost/bind.hpp>
+#include "FitDataDock.h"
+#include <IMU/Algorithms/OrientationFitting.h>
+#include <QuatUtils/QuatUtils.h>
+#include <IMU/Data/XSENSDataSample.h>
+#include "FittingWizzard.h"
+#include <Eigen/StdVector>
+
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(IMU::Quat)
 
 Q_DECLARE_METATYPE(IMU::VICONDataSample)
 Q_DECLARE_METATYPE(IMU::XSENSDataSample)
 
 MainWindow::MainWindow(QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags), osgSceneWidget(new CustomQOSGWidget),
-	xsensVisualization(400, 1000),
 	axis(new osgManipulator::TranslateAxisDragger),
 	rootNode(new osg::Switch), progressBar(new QProgressBar),
-	progressLabel(new QLabel), viconUseCustomPosition(true),
-	viconCustomPosition(IMU::VICONDataSample::Vec3::Zero())
+	progressLabel(new QLabel)
 {
 	setupUi(this);
 
@@ -32,28 +38,21 @@ MainWindow::MainWindow(QWidget *parent, Qt::WFlags flags)
 	// statystyki sceny
 	osgSceneWidget->addEventHandler( new osgViewer::StatsHandler() );
 
-	//ustawiam kolory ró¿d¿ek vicon i xsens
-	xsensVisualization.setConnectionsColor(Qt::green);
-	viconVisualization.setConnectionsColor(Qt::green);
-
-	xsensVisualization.setSpheresColor(Qt::red);
-	viconVisualization.setSpheresColor(Qt::yellow);
-
 	//manipulator sceny - mysz + klawiatura
 	auto manipulator = new osgGA::OrbitManipulator;
 	// Inicjalna pozycja kamery
 	manipulator->setHomePosition(osg::Vec3(0.0, -100.0, 100.0), osg::Vec3(0, 0, 0), osg::Vec3(0,0,1));
 	osgSceneWidget->setCameraManipulator(manipulator);
 
+	viconDock = new VICONDockWidget(rootNode, this);
+	xsensDock = new XSENSDockWidget(rootNode, this);
+
 	//domyœlna geometria osi
 	axis->setupDefaultGeometry();
 	axis->setMatrix(osg::Matrix::scale(100.0, 100.0, 100.0));
 
-
 	//dodajê wszystkie elementy sceny
 	rootNode->addChild(axis);
-	rootNode->addChild(xsensVisualization.asNode());
-	rootNode->addChild(viconVisualization.asNode());
 	rootNode->setAllChildrenOn();
 
 	//ustawiamy scene
@@ -62,47 +61,8 @@ MainWindow::MainWindow(QWidget *parent, Qt::WFlags flags)
 	//ustawiam scene 3D jako centralny widget
 	setCentralWidget(osgSceneWidget);
 
-	//czcionka dla teksów w dokach
-	QFont f("Times", 15, QFont::Bold);
-
-	xsensDock.dockWidget = new QDockWidget;
-	xsensDock.treeWidget = new QTreeWidget;
-	QWidget * w = new QWidget;
-	QVBoxLayout * l = new QVBoxLayout;
-	QLabel * label = new QLabel("XSENS Data");
-	label->setFont(f);
-	l->addWidget(label);
-	l->addWidget(xsensDock.treeWidget);
-	w->setLayout(l);
-	xsensDock.dockWidget->setWidget(w);
-	xsensDock.treeWidget->setColumnCount(13);
-	QStringList xHeaders;
-	xHeaders << "ID" << "GyroX" << "GyroY" << "GyroZ" << "AccX" << "AccY" << "AccZ" << "MagX" << "MagY" << "MagZ" << "Roll" << "Pitch" << "Yaw";
-	xsensDock.treeWidget->setHeaderLabels(xHeaders);	
-	xsensDock.treeWidget->header()->resizeSections(QHeaderView::ResizeMode::ResizeToContents);
-
-
-	viconDock.dockWidget = new QDockWidget;
-	viconDock.treeWidget = new QTreeWidget;
-	w = new QWidget;
-	l = new QVBoxLayout;
-	label = new QLabel("VICON Data");
-	label->setFont(f);
-	l->addWidget(label);
-	l->addWidget(viconDock.treeWidget);
-	w->setLayout(l);
-	viconDock.dockWidget->setWidget(w);
-	viconDock.treeWidget->setColumnCount(7);
-	QStringList vHeaders;
-	vHeaders << "ID" << "M1" << "M2" << "M3" << "M4" << "M5" << "M6";
-	viconDock.treeWidget->setHeaderLabels(vHeaders);	
-	viconDock.treeWidget->header()->resizeSections(QHeaderView::ResizeMode::ResizeToContents);
-
-	addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, viconDock.dockWidget);
-	addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, xsensDock.dockWidget);
-
-	connect(viconDock.treeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(onVICONDataChange(QTreeWidgetItem*,QTreeWidgetItem*)));
-	connect(xsensDock.treeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(onXSENSDataChange(QTreeWidgetItem*,QTreeWidgetItem*)));	
+	addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, viconDock);
+	addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, xsensDock);
 
 	progressBar->setMinimum(0);
 	progressBar->setMaximum(0);
@@ -134,6 +94,8 @@ void MainWindow::loadXSENSData()
 
 	//QtConcurrent::run(boost::bind(&MainWindow::XSENSDataProcessing, this, fileName));
 	XSENSDataProcessing(fileName);
+
+	xsensDock->setWindowTitle(fileName);
 }
 
 void MainWindow::loadVICONData()
@@ -153,6 +115,8 @@ void MainWindow::loadVICONData()
 
 	//QtConcurrent::run(boost::bind(&MainWindow::VICONDataProcessing, this, fileName));
 	VICONDataProcessing(fileName);
+
+	viconDock->setWindowTitle(fileName);
 }
 
 const bool MainWindow::parseVICONData(const QString & file, std::list<IMU::VICONDataSample> & data)
@@ -166,9 +130,9 @@ const bool MainWindow::parseVICONData(const QString & file, std::list<IMU::VICON
 
 		auto status = viconReader.readNextSample(viconSample);
 
-		if(status == IMU::UniversalDataReader<IMU::VICONDataSample>::RESULT_OK){
+		if(status == IMU::UniversalDataReaderBase::RESULT_OK){
 			data.push_back(viconSample);
-		}else if(status == IMU::UniversalDataReader<IMU::VICONDataSample>::DATA_FINISHED){
+		}else if(status == IMU::UniversalDataReaderBase::DATA_FINISHED){
 			read = false;
 		}else{
 			read = false;
@@ -190,9 +154,9 @@ const bool MainWindow::parseXSENSData(const QString & file, std::list<IMU::XSENS
 
 		auto status = xsensReader.readNextSample(xsensSample);
 
-		if(status == IMU::UniversalDataReader<IMU::XSENSDataSample>::RESULT_OK){
+		if(status == IMU::UniversalDataReaderBase::RESULT_OK){
 			data.push_back(xsensSample);
-		}else if(status == IMU::UniversalDataReader<IMU::XSENSDataSample>::DATA_FINISHED){
+		}else if(status == IMU::UniversalDataReaderBase::DATA_FINISHED){
 			read = false;
 		}else{
 			read = false;
@@ -201,92 +165,6 @@ const bool MainWindow::parseXSENSData(const QString & file, std::list<IMU::XSENS
 	}
 
 	return ret;
-}
-
-inline QString posToQString(const IMU::VICONDataSample::Vec3 & position)
-{
-	std::stringstream ss;
-
-	ss << "(" << position.x() << "; " << position.y() << "; " << position.z() << ")";
-
-	return QString::fromStdString(ss.str());
-}
-
-void MainWindow::refreshVICONData(QTreeWidget * tree)
-{	
-	for(auto it = viconData.begin(); it != viconData.end(); ++it){
-		auto item = new QTreeWidgetItem;
-		item->setText(0, QString::number((*it).timeID()));
-		item->setText(1, posToQString((*it).positionM1()));
-		item->setText(2, posToQString((*it).positionM2()));
-		item->setText(3, posToQString((*it).positionM3()));
-		item->setText(4, posToQString((*it).positionM4()));
-		item->setText(5, posToQString((*it).positionM5()));
-		item->setText(6, posToQString((*it).positionM6()));	
-		QVariant q;
-		q.setValue(*it);
-		item->setData(0, Qt::UserRole, q);
-		tree->addTopLevelItem(item);
-	}
-}
-
-void MainWindow::refreshXSENSData(QTreeWidget * tree)
-{
-	for(auto it = xsensData.begin(); it != xsensData.end(); ++it){
-		auto item = new QTreeWidgetItem;
-		item->setText(0, QString::number((*it).timeID()));
-		item->setText(1, QString::number((*it).gyroscopeSample().x()));
-		item->setText(2, QString::number((*it).gyroscopeSample().y()));
-		item->setText(3, QString::number((*it).gyroscopeSample().z()));
-		item->setText(4, QString::number((*it).accelerometerSample().x()));
-		item->setText(5, QString::number((*it).accelerometerSample().y()));
-		item->setText(6, QString::number((*it).accelerometerSample().z()));
-		item->setText(7, QString::number((*it).magnetometerSample().x()));
-		item->setText(8, QString::number((*it).magnetometerSample().y()));
-		item->setText(9, QString::number((*it).magnetometerSample().z()));
-		item->setText(10, QString::number((*it).estimatedOrientationSample().x()));
-		item->setText(11, QString::number((*it).estimatedOrientationSample().y()));
-		item->setText(12, QString::number((*it).estimatedOrientationSample().z()));
-		QVariant q;
-		q.setValue(*it);
-		item->setData(0, Qt::UserRole, q);
-		tree->addTopLevelItem(item);
-	}
-}
-
-
-void MainWindow::onVICONDataChange(QTreeWidgetItem * current, QTreeWidgetItem * previous)
-{
-	if(current != nullptr){
-		QVariant q = current->data(0, Qt::UserRole);
-		auto s = q.value<IMU::VICONDataSample>();
-		_3PointsTStick::StickPositionType pos;
-		pos[0] = s.positionM5();
-		pos[1] = s.positionM6();
-		pos[2] = s.positionM4();
-
-		if(viconUseCustomPosition == true){
-			for(unsigned int i = 0; i < 3; ++i){
-				pos[i] -= s.positionM1() + viconCustomPosition;
-			}
-		}
-
-		viconVisualization.setPosition(pos);
-	}
-}
-
-void MainWindow::onXSENSDataChange(QTreeWidgetItem * current, QTreeWidgetItem * previous)
-{
-	if(current != nullptr){
-		QVariant q = current->data(0, Qt::UserRole);
-		auto s = q.value<IMU::XSENSDataSample>();
-
-		xsensVisualization.setAttitude(IMU::XSENSDataSample::Vec3(
-			osg::DegreesToRadians(s.estimatedOrientationSample().x()),
-			osg::DegreesToRadians(s.estimatedOrientationSample().y()),
-			osg::DegreesToRadians(s.estimatedOrientationSample().z())			
-			));
-	}
 }
 
 void MainWindow::XSENSDataProcessing( const QString & fileName )
@@ -302,14 +180,7 @@ void MainWindow::XSENSDataProcessing( const QString & fileName )
 		}
 	}
 
-	xsensData.swap(tmpList);
-
-	refreshXSENSData(xsensDock.treeWidget);
-
-	if(xsensData.empty() == false){
-		onXSENSDataChange(xsensDock.treeWidget->topLevelItem(0), nullptr);		
-		xsensDock.treeWidget->setItemSelected(xsensDock.treeWidget->topLevelItem(0), true);
-	}
+	xsensDock->setData(XSENSDockWidget::DataPtr(new XSENSDockWidget::Data(tmpList)));
 
 	finishProcessing(tr("Za³adowano dane XSENS"));	
 }
@@ -325,32 +196,33 @@ void MainWindow::VICONDataProcessing( const QString & fileName )
 			return;
 		}
 	}
-
-	viconData.swap(tmpList);
-
-	refreshVICONData(viconDock.treeWidget);
+	
+	viconDock->setData(VICONDockWidget::DataPtr(new VICONDockWidget::Data(tmpList)));
 
 	//ustawiam d³ugoœci i offsety ró¿d¿ki dla XSENS
-	if(viconData.empty() == false){
+	if(tmpList.empty() == false){
 
-		onVICONDataChange(viconDock.treeWidget->topLevelItem(0), nullptr);
-		viconDock.treeWidget->setItemSelected(viconDock.treeWidget->topLevelItem(0), true);
-
-		auto s = viconData.front();
+		auto s = tmpList.front();
 
 		const double ll = (s.positionM1() - s.positionM4()).norm();
 		const double sl = (s.positionM5() - s.positionM6()).norm();
 
-		IMU::VICONDataSample::Vec3 half = s.positionM5() + (s.positionM6() - s.positionM5()) / 2.0;
+		IMU::Vec3 half = s.positionM5() + (s.positionM6() - s.positionM5()) / 2.0;
 
 		const double o = (s.positionM1() - half).norm();
+		const double dist51 = (s.positionM5() - s.positionM1()).norm();
+		const double dist16 = (s.positionM6() - s.positionM1()).norm();
 
-		xsensVisualization.setLongLength(ll);
-		xsensVisualization.setShortLength(sl);
-		xsensVisualization.setOffset(o);
+		xsensDock->stick().setLongLength(ll);
+		xsensDock->stick().setShortLength(sl);
+		xsensDock->stick().setOffset( dist51 >= dist16 ? o : -o);
+
+		viconDock->stick().setLongLength(ll);
+		viconDock->stick().setShortLength(sl);
+		viconDock->stick().setOffset( dist51 >= dist16 ? o : -o);		
 	}
 
-	finishProcessing(tr("Za³adowano dane VICON"));	
+	finishProcessing(tr("Za³adowano dane VICON"));
 }
 
 void MainWindow::finishProcessing(const QString & message)
@@ -365,4 +237,268 @@ void MainWindow::startProcessing(const QString & message)
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 	progressBar->setVisible(true);
 	QMainWindow::statusBar()->showMessage(message);
+}
+
+void MainWindow::fitVICON_XSENS()
+{
+	
+	if(viconDock->data() == nullptr || xsensDock->data() == nullptr || viconDock->data()->empty() == true || xsensDock->data()->empty() == true){
+		QMessageBox::warning(this, tr("Dane niekompletne"), tr("Na potrzeby dopasowania potrzebne s¹ dane XSENS i VICON. Uzupe³nij dane i spróbuj ponownie"));
+		return;
+	}
+
+	FittingWizard fw(xsensDock->data()->size(), viconDock->data()->size(), this);
+	//FittingWizard fw(100, 100, this);
+	int res = fw.exec();
+
+	if(res == QDialog::Accepted){
+
+		//krok pierwszy - dopasowujemy sygna³y ze wzglêdu na offset, przycinamy je
+		int xsensOffset = fw.offset();
+		
+		if(fw.offsetAutodetection() == true){
+			
+			//krok pierwszy - zamieniam oba sygna³y z reprezentacji orientacji na lokalrne rotacje
+
+			bool lengthsOk = true;
+			std::vector<IMU::Quat> viconRotations;
+			std::vector<IMU::Quat> xsensRotations;
+
+			//VICON
+			{
+
+				std::vector<IMU::Quat> viconOrientations;
+				viconOrientations.reserve(viconDock->data()->size());
+				viconRotations.reserve(viconDock->data()->size() - 1);
+
+				//wyci¹gam orientacje w formie kwaternionów
+				for(auto it = viconDock->data()->begin(); it != viconDock->data()->end(); ++it){
+					viconOrientations.push_back( osg::QuatUtils::eulerToQuaternion
+						<IMU::Quat, IMU::Vec3>(IMU::VICONDataSample::estimateOrientation(*it)));
+
+				}
+
+				//zamieniam orientacje na lokalne rotacje
+				osg::QuatUtils::convertOrientationsToRotations(viconRotations,
+					viconOrientations.begin(), viconOrientations.end());
+			}
+
+			//XSENS (czujnik)
+			{
+				std::vector<IMU::Quat> xsensOrientations;
+				xsensOrientations.reserve(xsensDock->data()->size());
+				xsensRotations.reserve(xsensDock->data()->size() - 1);
+
+				//wyci¹gam orientacje jako kwaterniony
+				for(auto it = xsensDock->data()->begin(); it != xsensDock->data()->end(); ++it){
+					xsensOrientations.push_back(osg::QuatUtils::eulerToQuaternion
+						<IMU::Quat, IMU::Vec3>((*it).estimatedOrientationSample()));
+				}
+
+				//konwertuje do lokalnych rotacji
+				osg::QuatUtils::convertOrientationsToRotations(xsensRotations,
+					xsensOrientations.begin(), xsensOrientations.end());
+			}
+
+
+			//sprawdzam który sygna³ jest d³u¿szy - zak³adam ¿e VICON, ale jeœli XSENS
+			//to zamieniam je wtedy i pamiêtam ¿eby uzyskany offset zamieniæ na ujemny
+			if(xsensRotations.size() > viconRotations.size()){
+				lengthsOk = false;
+				std::swap(xsensRotations, viconRotations);
+			}
+
+			//krok drugi - porównujê sugna³y w reprezentacji lokalnych rotacji
+			{				
+				// !!! WA¯NE !!!
+				// porównujemy xsens do vicon!!
+				double minAvgError = std::numeric_limits<double>::max();
+
+				auto xS = xsensRotations.begin();
+				auto xE = xS;
+				std::advance(xE, fw.minimalMatchDistance());
+
+				auto fxS = xS;
+				std::advance(fxS, xsensRotations.size() - fw.minimalMatchDistance());
+
+				do{
+
+					const auto l = std::distance(xS, xE);
+					const auto ll = std::distance(xS, xsensRotations.end());
+
+					auto locDestStart = viconRotations.begin();
+					auto locDestEnd = viconRotations.end();
+					std::advance(locDestEnd, -l);
+
+					while(locDestStart != locDestEnd){
+
+						const auto cxS = xS;
+						const double error = osg::QuatUtils::quatsDifference(cxS, xsensRotations.end(), locDestStart, viconRotations.end()).first / (double)ll;
+
+						if(error < minAvgError){
+							minAvgError = error;
+							xsensOffset = std::distance(viconRotations.begin(), locDestStart) - std::distance(xsensRotations.begin(), xS);
+						}
+
+						++locDestStart;						
+					}
+
+					if(xS == fxS && xE == xsensRotations.end()){
+						break;
+					}
+
+					//aktualizujemy porównywany zakres
+					if(xE != xsensRotations.end()){
+						++xE;
+					}else{
+						++xS;
+					}
+
+				}while(true);
+			}
+
+			if(lengthsOk == false){
+				xsensOffset = -xsensOffset;
+			}
+		}
+
+		//klonuje przyciête sygna³y
+		XSENSDockWidget::DataPtr xD;
+		XSENSDockWidget::DataPtr mxD;
+		VICONDockWidget::DataPtr vD;
+
+		{		
+			int vS = std::max(xsensOffset, 0);
+			int vE = std::min(viconDock->data()->size()-1, xsensDock->data()->size() + xsensOffset - 1);
+
+			int xS = std::max(-xsensOffset, 0);
+			int xE = std::min(xsensDock->data()->size()-1, viconDock->data()->size()-1);
+
+			auto itVS = viconDock->data()->begin();
+			std::advance(itVS, vS);
+			auto itVE = viconDock->data()->begin();
+			std::advance(itVE, vE);
+
+
+			auto itXS = xsensDock->data()->begin();
+			std::advance(itXS, xS);
+			auto itXE = xsensDock->data()->begin();
+			std::advance(itXE, xE);
+
+			xD.reset(new XSENSDockWidget::Data(itXS, itXE));
+			mxD.reset(new XSENSDockWidget::Data(itXS, itXE));
+			vD.reset(new VICONDockWidget::Data(itVS, itVE));
+
+		}
+
+		//znajdujemy rotacjê pomiêdzy pomiarami czujnika i vicon
+		//mam dany jeden obrót - uk³ad odniesienia czujnika do uk³adu odniesienia vicon
+		// albo lokalne u³o¿enie czujnika na ró¿d¿ce
+		// to wystarczy by wyznaczyæ drugi obrót i przemianowaæ dane orientacji z czujnika
+		// do systemu vicon
+
+		auto q = fw.orientation();
+
+		std::vector<IMU::Quat> viconOrientations;
+		std::vector<IMU::Quat> xsensOrientations;
+		std::vector<IMU::Quat> diffRotations;
+
+		//orientacje przyciêtych sygna³ów
+		{	
+			viconOrientations.reserve(vD->size());		
+
+			//wyci¹gam orientacje w formie kwaternionów
+			for(auto it = vD->begin(); it != vD->end(); ++it){
+				viconOrientations.push_back( osg::QuatUtils::eulerToQuaternion
+					<IMU::Quat, IMU::Vec3>(IMU::VICONDataSample::estimateOrientation(*it)));
+
+			}
+		
+			xsensOrientations.reserve(xD->size());		
+
+			//wyci¹gam orientacje jako kwaterniony
+			for(auto it = xD->begin(); it != xD->end(); ++it){
+				xsensOrientations.push_back(osg::QuatUtils::eulerToQuaternion
+					<IMU::Quat, IMU::Vec3>((*it).estimatedOrientationSample()));
+			}
+		}
+
+		//sygna³y powinny mieæ tak¹ sam¹ d³ugoœæ
+		assert(xD->size() == vD->size());
+
+		/*
+		diffRotations.reserve(xD->size());
+
+		//mam ró¿nicê pomiêdzy sygna³em vicona i xsensa
+		for(unsigned int i = 0; i < xD->size() - 1; ++i){
+			diffRotations.push_back(xsensOrientations[i].inverse() * viconOrientations[i]);
+		}
+
+		//teraz u¿ywamy rotacji któr¹ podano
+		if(fw.inputOrientationType() == FittingWizard::GLOBAL_SENSOR_FRAME){
+			auto qMissing = diffRotations[0] * q;
+			auto invMissing = qMissing.inverse();
+			//dopasowuje reszte
+
+			int i = 0;
+
+		}else{
+			auto qMissing = q * diffRotations[0];
+			auto invMissing = qMissing.inverse();
+			//dopasowuje reszte
+
+			int i = 0;
+		}*/
+
+		double minError = std::numeric_limits<double>::max();
+		IMU::Quat totalRot(1.0, 0.0, 0.0, 0.0);
+
+		for(unsigned int i = 0; i < viconOrientations.size() - 1; ++i){
+
+			auto difR = viconOrientations[i] * xsensOrientations[i].inverse();
+
+			std::vector<IMU::Quat> tmpXsens(xsensOrientations);
+
+			for(auto it = tmpXsens.begin(); it != tmpXsens.end(); ++it){
+				(*it) = difR * (*it);
+			}
+
+			double error = osg::QuatUtils::quatsDifference(viconOrientations.begin(),
+				viconOrientations.end(), tmpXsens.begin(), tmpXsens.end()).first;
+
+			if(error < minError){
+				minError = error;
+				totalRot = difR;
+			}
+		}
+
+		for(auto it = mxD->begin(); it != mxD->end(); ++it){
+
+			(*it).setEstimatedOrientationSample(totalRot * (*it).estimatedOrientationSample());
+
+		}
+
+		xsensDock->setCurrentData(xD);
+		viconDock->setCurrentData(vD);
+
+
+
+
+
+		//prezentujemy wyniki
+
+		/*
+		auto fDock = new FitDataDock(rootNode, this);
+		fDock->setData(viconDock->windowTitle(), viconDock->data(),
+			xsensDock->windowTitle(), xsensDock->data());
+		
+		addDockWidget(Qt::RightDockWidgetArea, fDock);
+		*/
+
+		auto dock = new XSENSDockWidget(rootNode, this);
+		dock->setWindowTitle("Fit data");
+		dock->setData(mxD);
+
+		addDockWidget(Qt::RightDockWidgetArea, dock);
+	}
 }

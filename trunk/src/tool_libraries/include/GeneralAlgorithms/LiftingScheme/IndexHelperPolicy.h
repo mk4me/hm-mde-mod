@@ -9,11 +9,17 @@
 #ifndef HEADER_GUARD_ALGO__BORDEREDLIFTINGSCHEMET_H__
 #define HEADER_GUARD_ALGO__BORDEREDLIFTINGSCHEMET_H__
 
+#include <boost/assert.hpp>
+
+namespace LiftingScheme
+{
+
+//! Klasa bazowa, definiuje podstawowe typy
 class IndexResolver
 {
 public:
 	typedef unsigned long int ulint;
-	typedef unsigned long int lint;
+	typedef long int lint;
 };
 
 //! Klasa pomocnicza przy generowaniu indeksów próbek
@@ -22,18 +28,21 @@ public:
 class PeriodicIndexResolver : public IndexResolver
 {
 public:
-    inline static unsigned int indexUnderflow(const lint idx, const ulint size)
+    inline static const ulint indexUnderflow(const lint idx, const ulint max,
+		const ulint min)
     {
-        BOOST_ASSERT(size > 0);
-        BOOST_ASSERT(idx < 0);
-        return size - std::abs(idx) % size;
+        BOOST_ASSERT((max - min) > 0);
+        BOOST_ASSERT(idx < min);
+		const ulint diff = max - min;
+		return (diff == 1) ? min : max - ((min - idx) % diff);
     }
 
-    inline static unsigned int indexOverflow(const lint idx, const ulint size)
+    inline static const ulint indexOverflow(const lint idx, const ulint max,
+		const ulint min)
     {
-        BOOST_ASSERT(size > 0);
-        BOOST_ASSERT(idx >= size);
-        return idx % size;
+        BOOST_ASSERT((max - min) > 0);
+        BOOST_ASSERT(idx >= max);
+        return min + (idx - max) % (max - min);
     }
 };
 
@@ -42,76 +51,47 @@ public:
 class BorderIndexResolver : public IndexResolver
 {
 public:
-    inline static unsigned int indexUnderflow(const lint idx, const ulint size)
+    inline static const ulint indexUnderflow(const lint idx, const ulint max,
+		const ulint min)
     {
-        BOOST_ASSERT(size > 0);
-        BOOST_ASSERT(idx < 0);
-        return 0;
+		BOOST_ASSERT((max - min) > 0);
+        BOOST_ASSERT(idx < min);
+        return min;
     }
 
-    inline static unsigned int indexOverflow(const lint idx, const ulint size)
+    inline static const ulint indexOverflow(const lint idx, const ulint max,
+		const ulint min)
     {
-        BOOST_ASSERT(size > 0);
-        BOOST_ASSERT(idx >= size);
-        return size - 1;
+		BOOST_ASSERT((max - min) > 0);
+        BOOST_ASSERT(idx >= max);
+        return max - 1;
     }
 };
 
-template<class IndexResolver = PeriodicIndexResolver>
+template<class IR = LiftingScheme::PeriodicIndexResolver>
 class LiftingSchemeIndexHelper
 {
 private:
-	typedef IndexResolver IndexResolverType;
+	typedef IR IndexResolverType;
 
 public:
 
 	inline static IndexResolver::ulint index(const IndexResolver::lint idx,
-		const IndexResolver::ulint size)
+		const IndexResolver::ulint max, const IndexResolver::ulint min = 0)
 	{
-		IndexResolver::ulint ret = 0;
-		if(idx < 0){
-			ret = IndexResolverType::indexUnderflow(idx, size);
-		}else if(idx >= size){
-			ret = IndexResolverType::indexOverflow(idx, size);
+		IndexResolver::ulint ret = min;
+		if(idx < min){
+			ret = IndexResolverType::indexUnderflow(idx, max, min);
+		}else if(idx >= max){
+			ret = IndexResolverType::indexOverflow(idx, max, min);
 		}
 
-		BOOST_ASSERT((ret >= 0 && ret < size), "B³edny indeks");
+		BOOST_ASSERT((ret >= min && ret < max), "B³edny indeks");
 
 		return ret;
 	}
 };
 
-template <class T, class IndexResolver = PeriodicIndexResolver>
-class LiftingTransformWithPreUpdate : public LiftingTransformWithIndexHelper<T, IndexResolver>
-{
-public:
-    virtual void forwardStep( Data& vec, const uint N )
-    {
-        BOOST_ASSERT((isPowerOfTwo(N) && N <= vec.size()));
-        split( vec, N );
-        preUpdate(vec, N, Forward);
-        predict( vec, N, Forward );
-        update( vec, N, Forward );
-    } // forwardStep
-
-protected:
-
-    virtual void preUpdate(Data& vec, const uint N, const TransDirection direction) = 0;
-};
-
-
-template <class T, class Interpolator, class IndexResolver = PeriodicIndexResolver>
-class LiftTrans : public LiftingTransformWithIndexHelper<T, IndexResolver>, public Interpolator {
-
-protected:
-	virtual void predict( Data& vec, const uint N, const TransDirection direction ){
-		Interpolator::interpolate(vec, N, direction);
-	}
-
-	virtual void update( Data& vec, const uint N, const TransDirection direction ){
-		Interpolator::update(vec, N, direction);
-	}
-
-};
+}
 
 #endif	//	HEADER_GUARD_ALGO__BORDEREDLIFTINGSCHEMET_H__

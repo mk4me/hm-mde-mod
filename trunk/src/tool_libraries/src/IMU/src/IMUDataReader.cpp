@@ -29,9 +29,9 @@ const ICSVParser::ConversionResultType IMUDataReader::convert(const ICSVParser::
 	// identyfikator czasu
 	IMUDataSample::TimeIDType timeID = 0;
 	IMUDataSample::TimeIDType sequenceID = 0;
-	IMUDataSample::Vec3 accelerometer;
-	IMUDataSample::Vec3 magnetometer;
-	IMUDataSample::Vec3 gyroscope;
+	Vec3 accelerometer;
+	Vec3 magnetometer;
+	Vec3 gyroscope;
 
 	if(ICSVParser::convert(lineData, 0, timeID) == ICSVParser::CONVERSION_OK &&
 		ICSVParser::convert(lineData, 1, sequenceID) == ICSVParser::CONVERSION_OK &&

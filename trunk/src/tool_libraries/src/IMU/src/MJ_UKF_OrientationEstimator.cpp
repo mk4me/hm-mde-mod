@@ -1,6 +1,4 @@
 #include <IMU/OrientationTestingFramework/MJ_UKF_OrientationEstimator.h>
-#include <osg/Quat>
-#include <osg/Vec3>
 #include <Eigen/Eigen>
 
 using namespace IMU;
@@ -32,7 +30,7 @@ void MJ_UKF_OrientationEstimator::reset()
 	processCovarianceMatrix_ = ProcessCovarianceMatrix::Zero();
 }
 
-void MJ_UKF_OrientationEstimator::estimate(const IMUDataSample & sample, IMUDataSample::Vec3 & orientation)
+void MJ_UKF_OrientationEstimator::estimate(const IMUDataSample & sample, Vec3 & orientation)
 {
 	//mno¿nik dla punktów sigma
 	const static double sigmaMul = std::sqrt(2.0 * StateSize);
@@ -271,7 +269,7 @@ const std::string MJ_UKF_OrientationEstimator::author() const
 	return std::string("Mateusz Janiak");
 }
 
-const MJ_UKF_OrientationEstimator::Quat MJ_UKF_OrientationEstimator::orientationChange(const Vec3 & angularVelocity, const double dt)
+const IMU::Quat MJ_UKF_OrientationEstimator::orientationChange(const IMU::Vec3 & angularVelocity, const double dt)
 {	
 	const double l = angularVelocity.norm();
 	if(l > 0.0001){
@@ -283,7 +281,7 @@ const MJ_UKF_OrientationEstimator::Quat MJ_UKF_OrientationEstimator::orientation
 	return Quat(1.0, 0.0, 0.0, 0.0);
 }
 
-const MJ_UKF_OrientationEstimator::Quat MJ_UKF_OrientationEstimator::convert(const Vec3 & vec)
+const IMU::Quat MJ_UKF_OrientationEstimator::convert(const IMU::Vec3 & vec)
 {
 	auto n = vec.norm();
 	if(n > 0.0001){
@@ -292,7 +290,7 @@ const MJ_UKF_OrientationEstimator::Quat MJ_UKF_OrientationEstimator::convert(con
 		return Quat(std::cos(a2), axis.x(), axis.y(), axis.z());
 	}
 
-	return Quat(1.0, 0.0, 0.0, 0.0);
+	return IMU::Quat(1.0, 0.0, 0.0, 0.0);
 }
 
 const MJ_UKF_OrientationEstimator::StateType MJ_UKF_OrientationEstimator::processModel(const StateType & previousState,
@@ -316,19 +314,19 @@ const MJ_UKF_OrientationEstimator::StateType MJ_UKF_OrientationEstimator::proces
 	return ret;
 }
 
-const MJ_UKF_OrientationEstimator::Quat MJ_UKF_OrientationEstimator::getOrientation(const StateType & state)
+const IMU::Quat MJ_UKF_OrientationEstimator::getOrientation(const StateType & state)
 {
 	//return Quat(state[3], state[0], state[1], state[2]);
 	return state.orientation;
 }
 
-const MJ_UKF_OrientationEstimator::Vec3 MJ_UKF_OrientationEstimator::getAngularVelocities(const StateType & state)
+const IMU::Vec3 MJ_UKF_OrientationEstimator::getAngularVelocities(const StateType & state)
 {
 	//return Vec3(state[4], state[5], state[6]);
 	return state.angularVelocities;
 }
 
-void MJ_UKF_OrientationEstimator::updateOrientation(StateType & state, const Quat & orientation)
+void MJ_UKF_OrientationEstimator::updateOrientation(StateType & state, const IMU::Quat & orientation)
 {
 	/*
 	state[0] = orientation.x();
@@ -339,7 +337,7 @@ void MJ_UKF_OrientationEstimator::updateOrientation(StateType & state, const Qua
 	state.orientation = orientation;
 }
 
-void MJ_UKF_OrientationEstimator::updateAngularVelocities(StateType & state, const Vec3 & angularVelocities)
+void MJ_UKF_OrientationEstimator::updateAngularVelocities(StateType & state, const IMU::Vec3 & angularVelocities)
 {
 	/*
 	state[4] = angularVelocities.x();
@@ -350,7 +348,7 @@ void MJ_UKF_OrientationEstimator::updateAngularVelocities(StateType & state, con
 	state.angularVelocities = angularVelocities;
 }
 
-MJ_UKF_OrientationEstimator::Vec3 MJ_UKF_OrientationEstimator::quatToYawPitchRoll(const Quat & quat)
+IMU::Vec3 MJ_UKF_OrientationEstimator::quatToYawPitchRoll(const IMU::Quat & quat)
 {
 	Vec3 ret;
 

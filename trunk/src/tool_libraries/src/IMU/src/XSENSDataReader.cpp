@@ -28,10 +28,10 @@ const ICSVParser::ConversionResultType XSENSDataReader::convert(const ICSVParser
 
 	// identyfikator czasu
 	XSENSDataSample::TimeIDType timeID = 0;
-	XSENSDataSample::Vec3 accelerometer;
-	XSENSDataSample::Vec3 magnetometer;
-	XSENSDataSample::Vec3 gyroscope;
-	XSENSDataSample::Vec3 orientation;
+	Vec3 accelerometer;
+	Vec3 magnetometer;
+	Vec3 gyroscope;
+	Vec3 orientation;
 
 	if(ICSVParser::convert(lineData, 0, timeID) == ICSVParser::CONVERSION_OK &&
 		ICSVParser::convert(lineData, 1, accelerometer.x()) == ICSVParser::CONVERSION_OK &&

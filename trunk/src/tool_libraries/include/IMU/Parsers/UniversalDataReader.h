@@ -19,8 +19,7 @@
 
 namespace IMU {
 
-template<typename T>
-class UniversalDataReader
+class UniversalDataReaderBase
 {
 public:
 	//! Stan odczytu danych
@@ -31,6 +30,18 @@ public:
 		CONVERSION_ERROR,	//! B³¹d konwersji danych
 		DATA_FINISHED		//! Koniec danych
 	};
+
+protected:
+
+	UniversalDataReaderBase() {}
+	virtual ~UniversalDataReaderBase() {}
+
+};
+
+template<typename T>
+class UniversalDataReader : public UniversalDataReaderBase
+{
+public:
 
 	//! Typ funktora rozpakowuj¹cego dane CSV jednej linii do zadanego typu
 	//! Nie powinien ustawiaæ/modyfikowaæ danych wejœciowych jeœli konwersja nie mo¿e byæ przeprowadzona poprawnie
@@ -89,7 +100,7 @@ UniversalDataReader<T>::~UniversalDataReader()
 }
 
 template<typename T>
-const typename UniversalDataReader<T>::ResultType UniversalDataReader<T>::readNextValue(T & value)
+const UniversalDataReaderBase::ResultType UniversalDataReader<T>::readNextValue(T & value)
 {
 	if(lastResult_ == RESULT_OK){					
 
@@ -110,7 +121,7 @@ const typename UniversalDataReader<T>::ResultType UniversalDataReader<T>::readNe
 }
 
 template<typename T>
-const typename UniversalDataReader<T>::ResultType UniversalDataReader<T>::mapParserResult(const ICSVParser::ReadResultType res)
+const UniversalDataReaderBase::ResultType UniversalDataReader<T>::mapParserResult(const ICSVParser::ReadResultType res)
 {
 	ResultType ret = RESULT_OK;
 
