@@ -11,14 +11,15 @@ const QuatLiftingCompressor::CompressedSignal QuatLiftingCompressor::compress(co
 	}
 
 	QuatLiftingScheme::Data::size_type elementsCount = LiftingScheme::LiftingSchemeUtils::floorPowerOfTwo(data.size());
-	QuatLiftingScheme::Data::size_type levelsCount = LiftingScheme::LiftingSchemeUtils::log2(elementsCount);
+	QuatLiftingScheme::Data::size_type levelsCount = LiftingScheme::LiftingSchemeUtils::ilog2(elementsCount);
 
 	CompressedSignal ret;
-	ret.first = data.front();
+	ret.globalAverage = data.front();
+	ret.sourceResolutions = levelsCount;
 
 	const auto endIT = settings.end();
 
-	for(unsigned int i = 0; i <= levelsCount; ++i){
+	for(unsigned int i = 0; i < levelsCount; ++i){
 
 		if(settings.find(i) == endIT){
 			unsigned int start = std::pow(2.0, (int)i);
@@ -31,7 +32,7 @@ const QuatLiftingCompressor::CompressedSignal QuatLiftingCompressor::compress(co
 				resData.push_back(data[start]);
 			}
 
-			ret.second.insert(CompressedCoefficients::value_type(i, resData));
+			ret.compressedData.insert(CompressedCoefficients::value_type(i, resData));
 		}
 
 	}
@@ -43,16 +44,16 @@ const QuatLiftingScheme::Data QuatLiftingCompressor::decompress(const Compressed
 {
 	QuatLiftingScheme::Data ret;
 
-	const unsigned int signalLevels = data.second.rbegin()->first;
+	const unsigned int signalLevels = data.sourceResolutions;
 
 	ret.reserve(std::pow(2.0, (int)signalLevels));
 
-	ret.push_back(data.first);
+	ret.push_back(data.globalAverage);
 	
 	for(unsigned int i = 0; i <= signalLevels; ++i){
 		
-		auto it = data.second.find(i);
-		if(it != data.second.end()){
+		auto it = data.compressedData.find(i);
+		if(it != data.compressedData.end()){
 			ret.insert(ret.end(), it->second.begin(), it->second.end());
 		}else{
 			const unsigned int count = std::pow(2.0, (int)i);

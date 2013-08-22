@@ -236,19 +236,25 @@ public:
 
 	//! \param value Wartos ktora testujemy
 	//! \return Czy wartoœæ jest potenga dwojki
-	static const bool isPowerOfTwo(const IndexResolver::lint value) {
+	inline static const bool isPowerOfTwo(const IndexResolver::lint value) {
 		return (value > 0) && !(value & (value-1));
 	}
 
-	static const double log2(const IndexResolver::lint value) {
-		static const double log2value(std::log(2.0f));
-
-		return std::log((double)value) / log2value;
+	inline static const IndexResolver::ulint ilog2(const IndexResolver::lint value) {
+		
+		IndexResolver::ulint l=0;
+		IndexResolver::lint x = value;
+		if(x >= (1 << 16)) { x >>= 16; l |= 16; }
+		if(x >= (1 << 8)) { x >>= 8; l |= 8; }
+		if(x >= (1 << 4)) { x >>= 4; l |= 4; }
+		if(x >= (1 << 2)) { x >>= 2; l |= 2; }
+		if(x >= (1 << 1)) l |= 1;
+		return l;
 	}
 
 	//! \param value Wartoœæ testowana
 	//! \return Najwieksza potega dwojki nie wieksza niz testowana wartosc
-	static IndexResolver::ulint floorPowerOfTwo(const IndexResolver::lint value) {
+	inline static IndexResolver::ulint floorPowerOfTwo(const IndexResolver::lint value) {
 		
 		if (value <= 2)
 			return value;

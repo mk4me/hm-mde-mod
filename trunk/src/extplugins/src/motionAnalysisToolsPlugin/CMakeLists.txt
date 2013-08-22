@@ -20,6 +20,8 @@ SET_SOURCE_FILES(
 	DegreesToRadians.cpp
 	QuaternionToAngleAxis.h
 	QuaternionToAngleAxis.cpp
+	SkeletonCompressorProcessor.h
+	SkeletonCompressorProcessor.cpp
 )
 
 SET_MOC_FILES(

@@ -26,7 +26,12 @@ namespace QuatUtils
 		//! Typ mapy z pozostawionymi rozdzielczoœciami
 		typedef std::map<unsigned int, QuatLiftingScheme::Data> CompressedCoefficients;
 		//! Typ opisujacy skompresowane dane - pocz¹tkowa wartoœæ œrednia + skompresowane detale
-		typedef std::pair<osg::Quat, CompressedCoefficients> CompressedSignal;
+		struct CompressedSignal
+		{
+			osg::Quat globalAverage;
+			CompressedCoefficients compressedData;
+			unsigned int sourceResolutions;
+		};
 
 		//! \param data Dane po dekompozycji schematem liftingu
 		//! \para settings Ustawienia kompresji - które poziomy odrzucamy

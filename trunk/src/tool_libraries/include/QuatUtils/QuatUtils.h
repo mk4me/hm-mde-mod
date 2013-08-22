@@ -227,9 +227,9 @@ namespace osg {
 	template<class Vec3I>
 	void QuatUtils::clampEuler(Vec3I & euler)
 	{
-		euler.x() = clamp(euler.x(), -osg::PI, osg::PI);
-		euler.y() = clamp(euler.y(), -osg::PI, osg::PI);
-		euler.z() = clamp(euler.z(), -osg::PI, osg::PI);
+		euler.x() = clamp<double>(euler.x(), -osg::PI, osg::PI);
+		euler.y() = clamp<double>(euler.y(), -osg::PI, osg::PI);
+		euler.z() = clamp<double>(euler.z(), -osg::PI, osg::PI);
 	}
 
 	template<class QuatT, class Vec3T>
