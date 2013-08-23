@@ -85,7 +85,9 @@ public:
 		kinematic::JointAnglesCollectionPtr outSkeleton(new kinematic::JointAnglesCollection);
 		outSkeleton->setConfigurationID(inSkeleton->getConfigurationID());
 		outSkeleton->setLengthRatio(inSkeleton->getLengthRatio());
-		outSkeleton->setSkeletal(inSkeleton->getHAnimSkeleton(), inSkeleton->getRootPositions(), channels);	
+		auto rootPositions = inSkeleton->getRootPositions();
+		rootPositions.resize(samplesSize);
+		outSkeleton->setSkeletal(inSkeleton->getHAnimSkeleton(), rootPositions, channels);
 
 		outPinA->setValue(outSkeleton);
 	}
