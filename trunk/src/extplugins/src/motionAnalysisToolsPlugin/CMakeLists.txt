@@ -22,6 +22,14 @@ SET_SOURCE_FILES(
 	QuaternionToAngleAxis.cpp
 	SkeletonCompressorProcessor.h
 	SkeletonCompressorProcessor.cpp
+	QuatCompression.h
+	QuatCompression.cpp
+	QuatNoiseReduction.h
+	QuatNoiseReduction.cpp
+	QuatLiftingReconstruction.h
+	QuatLiftingReconstruction.cpp
+	QuatCommon.h
+	QuatCommon.cpp
 )
 
 SET_MOC_FILES(

@@ -15,9 +15,9 @@ const Quat QuatUtils::exp(const Quat & val)
 	
     Vec3d vec(val.asVec3());
 	Vec3d::value_type l = vec.length();
-	double sinL = std::sin(l);
+	const double sinL = std::sin(l);
 
-	if(sinL > QUAT_EPSILON){
+	if(std::fabs(sinL) > QUAT_EPSILON){
 		vec *= sinL / l;
 	}else {
 		l = vec[0] = vec[1] = vec[2] = 0.0;
@@ -28,11 +28,11 @@ const Quat QuatUtils::exp(const Quat & val)
 
 const Quat QuatUtils::log(const Quat & val)
 {
-	double angle = std::acos(std::min(std::max(val.w(), -1.0), 1.0));
-	double sinAlpha = std::sin(angle);
+	const double angle = std::acos(std::min(std::max(val.w(), -1.0), 1.0));
+	const double sinAlpha = std::sin(angle);
 	Vec3d vec(0.0, 0.0, 0.0);
 
-	if(sinAlpha > QUAT_EPSILON){
+	if(std::fabs(sinAlpha) > QUAT_EPSILON){
 		vec = val.asVec3() * angle / sinAlpha;
 	}
 
@@ -46,8 +46,8 @@ const Quat QuatUtils::pow(const Quat & base, const Quat::value_type power)
 
 const Quat QuatUtils::normalize(const Quat & val)
 {
-    double l = val.length2();
-    if(l == 0.0){
+    const double l = val.length2();
+    if(l < QUAT_EPSILON){
         return UNIT_QUAT;
     }
 
@@ -71,13 +71,13 @@ const Quat QuatUtils::slerpNoInvert(const Quat &from, const Quat &to, const Quat
 	static const double lowerRange = -1.0 + QUAT_EPSILON;
 	static const double upperRange = -lowerRange;
 
-    double scale_from = 1.0 - t;
+    const double scale_from = 1.0 - t;
     // this is a dot product
-    double cosomega = from.asVec4() * to.asVec4();
+    const double cosomega = from.asVec4() * to.asVec4();
 
     if(lowerRange < cosomega && cosomega < upperRange)
     {
-        double omega = std::acos(cosomega) ;  // 0 <= omega <= Pi (see man acos)
+        const double omega = std::acos(cosomega) ;  // 0 <= omega <= Pi (see man acos)
         //double sinomega = std::sin(omega) ;  // this sinomega should always be +ve so
         // could try sinomega=sqrt(1-cosomega*cosomega) to avoid a sin()?
         return ((from * std::sin(scale_from * omega)) + (to * std::sin(t * omega))) / std::sin(omega);
@@ -96,8 +96,8 @@ const Quat QuatUtils::slerpNoInvert(const Quat &from, const Quat &to, const Quat
 //! spherical cubic interpolation
 const Quat QuatUtils::squad(const Quat &q1,const Quat &q2,const Quat &a,const Quat &b, const Quat::value_type t)
 {
-	Quat c(slerpNoInvert(q1, q2, t));
-	Quat d(slerpNoInvert(a, b, t));
+	const Quat c(slerpNoInvert(q1, q2, t));
+	const Quat d(slerpNoInvert(a, b, t));
 	return slerpNoInvert(c, d, 2.0 * t * (1.0 - t));
 }
 
@@ -110,9 +110,9 @@ const Quat QuatUtils::simpleSquadCall(const Quat &q1,const Quat &q2,const Quat &
 const Quat QuatUtils::bezier(const Quat &q1, const Quat &q2, const Quat &a, const Quat &b, const Quat::value_type t)
 {
 	// level 1
-	Quat q11(slerpNoInvert(q1, a, t));
-	Quat q12(slerpNoInvert(a, b, t));
-	Quat q13(slerpNoInvert(b, q2, t));
+	const Quat q11(slerpNoInvert(q1, a, t));
+	const Quat q12(slerpNoInvert(a, b, t));
+	const Quat q13(slerpNoInvert(b, q2, t));
 	// level 2 and 3
 	return slerpNoInvert(slerpNoInvert(q11, q12, t), slerpNoInvert(q12, q13, t), t);
 }
@@ -126,6 +126,6 @@ const Quat QuatUtils::simpleBezierCall(const Quat &q1,const Quat &q2,const Quat 
 const Quat QuatUtils::spline(const Quat &qnm1, const Quat &qn, const Quat &qnp1)
 {
 	//inverse should be done but only unit quaternions are expected so conjugate is more efficient!!
-	Quat qni(qn.conj());	
+	const Quat qni(qn.conj());	
 	return qn * exp(( log(qni * qnm1) + log(qni * qnp1)) / -4.0);
 }

@@ -14,6 +14,7 @@
 #include <plugins/c3d/C3DChannels.h>
 #include <plugins/kinematic/Wrappers.h>
 #include <QuatUtils/QuaternionCompressor.h>
+#include <QuatUtils/QuaternionInterpolators.h>
 
 typedef UniversalOutputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionOutputPin;
 typedef UniversalInputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionInputPin;
@@ -25,10 +26,22 @@ typedef UniversalInputPinT<kinematic::JointAngleChannel> JointAnglesInputPin;
 
 DEFINE_WRAPPER(QuatUtils::QuatLiftingCompressor::CompressedSignal, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
 
+DEFINE_WRAPPER(core::ConstObjectsList, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+
 typedef UniversalOutputPinT<QuatUtils::QuatLiftingCompressor::CompressedSignal> QuatCompressedSignalOutputPin;
 typedef UniversalInputPinT<QuatUtils::QuatLiftingCompressor::CompressedSignal> QuatCompressedSignalInputPin;
 
 typedef UniversalOutputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionOutputPin;
 typedef UniversalInputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionInputPin;
+
+typedef UniversalOutputPinT<core::ConstObjectsList> ObjectsCollectionOutputPin;
+typedef UniversalInputPinT<core::ConstObjectsList> ObjectsCollectionInputPin;
+
+typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatLinHaarInterpolator> LinearHaarLS;
+typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatHaarInterpolator> QuatHarrLS;
+typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatLerpInterpolator> QuatLerpLS;
+typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatSlerpInterpolator> QuatSlerpLS;
+typedef QuatUtils::PseudoQuatTangentLiftingScheme<> PseudoTangentSpaceLS;
+
 
 #endif	//	HEADER_GUARD_MOTION_ANALYSIS__TYPES_H__

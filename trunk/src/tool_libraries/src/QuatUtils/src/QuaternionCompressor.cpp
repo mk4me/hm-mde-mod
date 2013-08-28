@@ -46,17 +46,17 @@ const QuatLiftingScheme::Data QuatLiftingCompressor::decompress(const Compressed
 
 	const unsigned int signalLevels = data.sourceResolutions;
 
-	ret.reserve(std::pow(2.0, (int)signalLevels));
+	ret.reserve(1 << signalLevels);
 
 	ret.push_back(data.globalAverage);
 	
-	for(unsigned int i = 0; i <= signalLevels; ++i){
+	for(unsigned int i = 0; i < signalLevels; ++i){
 		
 		auto it = data.compressedData.find(i);
 		if(it != data.compressedData.end()){
 			ret.insert(ret.end(), it->second.begin(), it->second.end());
 		}else{
-			const unsigned int count = std::pow(2.0, (int)i);
+			const unsigned int count = 1 << i;
 			for(unsigned int j = 0; j < count; ++j){
 				ret.push_back(osg::Quat(0.0, 0.0, 0.0, 1.0));
 			}

@@ -28,9 +28,9 @@ public:
 
 		for(uint i = 0; i < half; i++){
 			const uint j = half + i;
-			if(direction == LiftingScheme::LiftingSchemeUtils::TransDirection::Forward){
+			if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
 				vec[j] -= vec[i];
-			}else if(direction == LiftingScheme::LiftingSchemeUtils::TransDirection::Inverse){
+			}else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
 				vec[j] += vec[i];
 			}
 
@@ -73,8 +73,6 @@ public:
 			}else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
 				vec[j] *= vec[i];
 			}
-
-			//vec[j] = osg::QuatUtils::normalize(vec[j]);
 		}
 	}
 
@@ -109,7 +107,7 @@ public:
 
         for(uint i = 0; i < half; i++){
             const uint j = half + i;
-            const osg::Quat predValue((vec[i] + vec[IndexHelper::index(i+1,half)])/2);
+            const osg::Quat predValue(osg::QuatUtils::normalize((vec[i] + vec[IndexHelper::index(i+1,half)])/2));
             if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
                 vec[j] -= predValue;
             }else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
@@ -128,7 +126,7 @@ public:
 
         for(uint i = 0; i < half; i++){
             const uint j = half + i;
-            const osg::Quat updateValue((vec[j] + vec[IndexHelper::index(lessHalf + i, N, half)])/4);
+            const osg::Quat updateValue(osg::QuatUtils::normalize((vec[j] + vec[IndexHelper::index(lessHalf + i, N, half)])/4));
             if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
                 vec[i] += updateValue;
             }else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
@@ -158,8 +156,6 @@ public:
             }else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
                 vec[j] = predValue * vec[j];
             }
-
-            //vec[j] = osg::QuatUtils::normalize(vec[j]);
         }
     }
 
@@ -173,14 +169,11 @@ public:
             const uint j = half + i;
             osg::Quat updateVal;
             updateVal.slerp(0.5, vec[IndexHelper::index(lessHalf + i, N, half)], vec[j]);
-            //updateVal = osg::QuatUtils::normalize(updateVal);
             if(direction == LiftingScheme::LiftingSchemeUtils::Forward){
                 vec[i] = vec[i] * osg::QuatUtils::pow(updateVal, 0.5);
             }else if(direction == LiftingScheme::LiftingSchemeUtils::Inverse){
                 vec[i] = vec[i] * osg::QuatUtils::pow(updateVal, -0.5);
             }
-
-            //vec[i] = osg::QuatUtils::normalize(vec[i]);
         }
     }
 };
@@ -227,7 +220,7 @@ public:
 	}
 };
 
-template<class IR = LiftingScheme::PeriodicIndexResolver>
+template<class IR = LiftingScheme::BorderIndexResolver>
 class PseudoQuatTangentLiftingScheme : public QuatLiftingScheme
 {
 private:
@@ -239,15 +232,15 @@ protected:
 
 	static void quatToTangentSpace(const Data & src, Vec3LiftingScheme::Data & dest)
 	{
-		for(auto it = src.begin(); it != src.end(); it++){
-			dest.push_back(osg::QuatUtils::log(*it).asVec3());
+		for(int i = 0; i < src.size(); i++){
+			dest[i] = osg::QuatUtils::log(src[i]).asVec3();
 		}
 	}
 
 	static void tangentSpaceToQuat(const Vec3LiftingScheme::Data & src, Data & dest)
 	{
 		for(int i = 0; i < src.size(); i++){
-			dest[i] = osg::QuatUtils::exp(osg::Quat(src[i].x(), src[i].y(), src[i].z(), 0));
+			dest[i] = osg::QuatUtils::normalize(osg::QuatUtils::exp(osg::Quat(src[i].x(), src[i].y(), src[i].z(), 0)));
 		}
 	}
 
@@ -265,29 +258,53 @@ protected:
 
 public:
 
-	virtual void forwardTrans( Data& vec, const uint N )
+	virtual void forwardTrans( Data& vec, const size_type N )
 	{
 		
 		TangentSpaceLiftingScheme tangentLifting;
 		TangentSpaceLiftingScheme::Data data;
+		data.resize(vec.size());
 
 		quatToTangentSpace(vec, data);
 
-		tangentLifting.forwardTrans(data, N);
+		for (size_type n = N; n > 1; n >>= 1) {
+			tangentLifting.forwardStep(data, n);
+		}
 
 		tangentSpaceToQuat(data, vec);
+
+		/*for (size_type n = N; n > 1; n >>= 1) {
+			
+			quatToTangentSpace(vec, data);
+
+			tangentLifting.forwardStep(data, n);
+
+			tangentSpaceToQuat(data, vec);			
+		}*/
 	}
 
-	virtual void inverseTrans( Data& vec, const uint N )
+	virtual void inverseStep( Data& vec, const size_type N )
 	{
 		TangentSpaceLiftingScheme tangentLifting;
 		TangentSpaceLiftingScheme::Data data;
+		data.resize(vec.size());
 
 		quatToTangentSpace(vec, data);
 
-		tangentLifting.inverseTrans(data, N);
+		for (size_type n = 2; n <= N; n <<= 1) {
+			tangentLifting.inverseStep(data, n);
+		}
 
 		tangentSpaceToQuat(data, vec);
+
+		/*for (size_type n = 2; n <= N; n <<= 1) {
+
+			quatToTangentSpace(vec, data);
+
+			tangentLifting.inverseStep(data, n);
+
+			tangentSpaceToQuat(data, vec);			
+		}*/
 	}
 
 

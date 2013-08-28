@@ -14,14 +14,10 @@
 #include <GeneralAlgorithms/LiftingScheme/LiftingSchemeT.h>
 #include <QuatUtils/QuaternionInterpolators.h>
 #include <plugins/dfElements/DFSources.h>
+#include "QuatCompression.h"
 
-typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatHaarInterpolator> QuatHarrLS;
-typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatLerpInterpolator> QuatLerpLS;
-typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatSlerpInterpolator> QuatSlerpLS;
-typedef QuatUtils::PseudoQuatTangentLiftingScheme<> PseudoTangentSpaceLS;
-
-typedef TransformProcessor<true, LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatLinHaarInterpolator>> LinHaarF;
-typedef TransformProcessor<false, LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatLinHaarInterpolator>> LinHaarB;
+typedef TransformProcessor<true, LinearHaarLS> LinHaarF;
+typedef TransformProcessor<false, LinearHaarLS> LinHaarB;
 
 typedef TransformProcessor<true, QuatHarrLS> QuatHaarF;
 typedef TransformProcessor<false, QuatHarrLS> QuatHaarB;
@@ -42,6 +38,8 @@ CORE_PLUGIN_BEGIN("MotionDataAnalysisPlugin", core::UID::GenerateUniqueID("{07F0
 
 	CORE_PLUGIN_ADD_OBJECT_WRAPPER(QuatUtils::QuatLiftingCompressor::CompressedSignal);
 
+	CORE_PLUGIN_ADD_OBJECT_WRAPPER(core::ConstObjectsList);
+
 	// dodajemy element przetwarzajacy - klase tego elementu, musi on mieæ domyœlny konstruktor
 	// Wszystkie tego typu elementy musz¹ znaleŸæ siê wewn¹trz serwisu. 
 	VDF_SERVICE_BEGIN(MotionVDFElementsService, "{C45743E2-4D41-4B73-AE72-91E979FD0E8C}")
@@ -58,6 +56,13 @@ CORE_PLUGIN_BEGIN("MotionDataAnalysisPlugin", core::UID::GenerateUniqueID("{07F0
 			"{CEBCAA8B-FD4C-4862-BC52-FA287160DC23}",
 			QIcon());
 
+		VDF_ADD_DATA_PROCESSOR(
+			MotionAnalysisTests,
+			"Motion Analysis Tests",
+			"{CEBCAA8E-FD4C-4852-BC52-F0287160DC23}",
+			QIcon());
+
+		/*
 		VDF_ADD_DATA_PROCESSOR(
 			EulerNoiseAdderProcessor,
 			"Euler Angles Noise Adder",
@@ -219,6 +224,7 @@ CORE_PLUGIN_BEGIN("MotionDataAnalysisPlugin", core::UID::GenerateUniqueID("{07F0
 			"Pseudo Tangent space Skeleton Compressor-Decompressor",
 			"{B1C1FFAA-1A4A-4862-BA52-FA284160AC20}",
 			QIcon());
+			*/
 
 		
 

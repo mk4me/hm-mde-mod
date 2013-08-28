@@ -79,7 +79,7 @@ public:
 	inline static IndexResolver::ulint index(const IndexResolver::lint idx,
 		const IndexResolver::ulint max, const IndexResolver::ulint min = 0)
 	{
-		IndexResolver::ulint ret = min;
+		IndexResolver::ulint ret = idx;
 		if(idx < min){
 			ret = IndexResolverType::indexUnderflow(idx, max, min);
 		}else if(idx >= max){

@@ -189,7 +189,7 @@ namespace osg {
 	// ------------------------------- IMPLEMENTACJA --------------------------------
 
 	template<class It>
-	static void denoise(It start, const It end, const double threshold)
+	void QuatUtils::denoise(It start, const It end, const double threshold)
 	{
 
 		if(threshold <= 0 || threshold >= 0.5){

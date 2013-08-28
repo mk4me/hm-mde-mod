@@ -419,7 +419,7 @@ public:
 
 }; // Liftbase
 
-template <class T, template<typename> class Interpolator, class IR = PeriodicIndexResolver>
+template <class T, template<typename> class Interpolator, class IR = BorderIndexResolver>
 class InterpolatorLiftingSchemeT : public LiftingSchemeT<T> {
 
 protected:
