@@ -15,27 +15,29 @@
 #include <plugins/kinematic/Wrappers.h>
 #include <QuatUtils/QuaternionCompressor.h>
 #include <QuatUtils/QuaternionInterpolators.h>
+#include <plugins/newVdf/UniversalOutputPin.h>
+#include <utils/PtrPolicyStd.h>
 
-typedef UniversalOutputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionOutputPin;
-typedef UniversalInputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionInputPin;
+typedef vdf::UniversalOutputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionOutputPin;
+typedef vdf::UniversalInputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionInputPin;
 
-DEFINE_WRAPPER(kinematic::JointAngleChannel, utils::PtrPolicyBoost, utils::ClonePolicyVirtualCloneMethod);
+DEFINE_WRAPPER(kinematic::JointAngleChannel, utils::PtrPolicyStd, utils::ClonePolicyVirtualCloneMethod);
 
-typedef UniversalOutputPinT<kinematic::JointAngleChannel> JointAnglesOutputPin;
-typedef UniversalInputPinT<kinematic::JointAngleChannel> JointAnglesInputPin;
+typedef vdf::UniversalOutputPinT<kinematic::JointAngleChannel> JointAnglesOutputPin;
+typedef vdf::UniversalInputPinT<kinematic::JointAngleChannel> JointAnglesInputPin;
 
-DEFINE_WRAPPER(QuatUtils::QuatLiftingCompressor::CompressedSignal, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+DEFINE_WRAPPER(QuatUtils::QuatLiftingCompressor::CompressedSignal, utils::PtrPolicyStd, utils::ClonePolicyCopyConstructor);
 
-DEFINE_WRAPPER(core::ConstObjectsList, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+DEFINE_WRAPPER(utils::ConstObjectsList, utils::PtrPolicyStd, utils::ClonePolicyCopyConstructor);
 
-typedef UniversalOutputPinT<QuatUtils::QuatLiftingCompressor::CompressedSignal> QuatCompressedSignalOutputPin;
-typedef UniversalInputPinT<QuatUtils::QuatLiftingCompressor::CompressedSignal> QuatCompressedSignalInputPin;
-
-typedef UniversalOutputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionOutputPin;
-typedef UniversalInputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionInputPin;
-
-typedef UniversalOutputPinT<core::ConstObjectsList> ObjectsCollectionOutputPin;
-typedef UniversalInputPinT<core::ConstObjectsList> ObjectsCollectionInputPin;
+typedef vdf::UniversalOutputPinT<QuatUtils::QuatLiftingCompressor::CompressedSignal> QuatCompressedSignalOutputPin;
+typedef vdf::UniversalInputPinT<QuatUtils::QuatLiftingCompressor::CompressedSignal> QuatCompressedSignalInputPin;
+		
+typedef vdf::UniversalOutputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionOutputPin;
+typedef vdf::UniversalInputPinT<kinematic::JointAnglesCollection> JointAnglesCollectionInputPin;
+		
+typedef vdf::UniversalOutputPinT<utils::ConstObjectsList> ObjectsCollectionOutputPin;
+typedef vdf::UniversalInputPinT<utils::ConstObjectsList> ObjectsCollectionInputPin;
 
 typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatLinHaarInterpolator> LinearHaarLS;
 typedef LiftingScheme::InterpolatorLiftingSchemeT<osg::Quat, QuatUtils::QuatHaarInterpolator> QuatHarrLS;

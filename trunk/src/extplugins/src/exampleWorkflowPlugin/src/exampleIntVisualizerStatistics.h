@@ -11,6 +11,7 @@
 
 #include <corelib/IVisualizer.h>
 #include <QtCore/QObject>
+#include <corelib/AbstractSerie.h>
 
 class QTextEdit;
 
@@ -22,25 +23,18 @@ class ExampleIntVisualizerStatistics : public QObject, public plugin::IVisualize
 	CLASS_DESCRIPTION("Example Int Visualizer Statistics", "Example Int Visualizer Statistics")
 
 public:
-    class StatsSerie : public plugin::IVisualizer::ISerie
+    class StatsSerie : public plugin::AbstractSerie
     {
 		friend class ExampleIntVisualizerStatistics;
     public:
         StatsSerie(QTextEdit * widget);
 
     public:
-		virtual void setName(const std::string & name);
-		virtual const std::string getName() const;
-		virtual void setData(const core::TypeInfo & requestedDataType, const core::ObjectWrapperConstPtr & data);
 		virtual void update();
-		virtual const core::ObjectWrapperConstPtr & getData() const;
-		virtual const core::TypeInfo & getRequestedDataType() const;
+		virtual void setupData(const core::VariantConstPtr & data);
 
 	private:
 		QTextEdit * widget;
-		core::ObjectWrapperConstPtr data;
-		std::string name;
-		utils::TypeInfo requestedType;
     };
 
 public:
@@ -55,12 +49,19 @@ public:
 	virtual QIcon* createIcon();
 	virtual QPixmap takeScreenshot() const;
 	virtual void update( double deltaTime );
-	virtual plugin::IVisualizer::ISerie* createSerie( const ISerie* serie );
-	virtual plugin::IVisualizer::ISerie* createSerie(const core::TypeInfo & requestedType, const core::ObjectWrapperConstPtr & data);
+	
+	virtual plugin::IVisualizer::ISerie *createSerie(const utils::TypeInfo & requestedType, const core::VariantConstPtr & data);
+	virtual plugin::IVisualizer::ISerie* createSerie(const ISerie* serie, const utils::TypeInfo & requestedType, const core::VariantConstPtr & data);
+	virtual plugin::IVisualizer::ISerie *createSerie(const plugin::IVisualizer::ISerie*);
+	
+
 	virtual void removeSerie( ISerie* serie );
 	virtual void setActiveSerie( ISerie * serie );
 	virtual const plugin::IVisualizer::ISerie * getActiveSerie() const;
-	virtual void getSupportedTypes( core::TypeInfoList & supportedTypes ) const;
+
+	virtual plugin::IVisualizer::ISerie * getActiveSerie();
+
+	virtual void getSupportedTypes(utils::TypeInfoList & supportedTypes) const;
 	virtual int getMaxDataSeries() const;
 
 private slots:

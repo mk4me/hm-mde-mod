@@ -20,14 +20,13 @@
 #include <iostream>
 #include <list>
 
-#include <QtGui/QDialog>
-#include <QtGui/QMessageBox>
+#include <QtWidgets/QDialog>
+#include <QtWidgets/QMessageBox>
 #include <QtCore/QString>
 #include <QtCore/QtCore>
-#include <QtGui/QtGui>
 #include <QtOpenGL/QtOpenGL>
-#include <QtGui/QAction>
-#include <QtGui/QWidget>
+#include <QtWidgets/QAction>
+#include <QtWidgets/QWidget>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/function.hpp>

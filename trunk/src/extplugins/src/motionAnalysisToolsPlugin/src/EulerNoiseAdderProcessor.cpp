@@ -1,7 +1,7 @@
 #include "EulerNoiseAdderProcessor.h"
-#include <QtGui/QDoubleSpinBox>
-#include <QtGui/QHBoxLayout>
-#include <QtGui/QLabel>
+#include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
 #include <osg/Math>
 #include <boost/lexical_cast.hpp>
 #include <boost/random.hpp>

@@ -12,14 +12,15 @@
 #include <corelib/IPlugin.h>
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
 #include <plugins/newVdf/IDataFlowProvider.h>
+#include <utils/PtrPolicyStd.h>
 #include <vector>
 
 typedef std::vector<int> Ints;
 typedef utils::shared_ptr<Ints> IntsPtr;
 typedef utils::shared_ptr<const Ints> IntsConstPtr;
 
-DEFINE_WRAPPER(Ints, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
-DEFINE_WRAPPER(ExampleIntStatistics, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+DEFINE_WRAPPER(Ints, utils::PtrPolicyStd, utils::ClonePolicyCopyConstructor);
+DEFINE_WRAPPER(ExampleIntStatistics, utils::PtrPolicyStd, utils::ClonePolicyCopyConstructor);
 
 
 

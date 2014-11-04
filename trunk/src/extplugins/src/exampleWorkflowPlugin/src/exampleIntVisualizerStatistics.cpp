@@ -1,38 +1,11 @@
 #include "PCH.h"
 #include "exampleIntVisualizerStatistics.h"
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
-#include <QtGui/QTextEdit>
+#include <QtWidgets/QTextEdit>
 
 ExampleIntVisualizerStatistics::StatsSerie::StatsSerie( QTextEdit * widget ) : widget(widget)
 {
 
-}
-
-void ExampleIntVisualizerStatistics::StatsSerie::setName( const std::string & name )
-{
-	this->name = name;
-}
-
-const std::string ExampleIntVisualizerStatistics::StatsSerie::getName() const
-{
-	return name;
-}
-
-void ExampleIntVisualizerStatistics::StatsSerie::setData( const core::TypeInfo & requestedDataType, const core::ObjectWrapperConstPtr & data )
-{
-	this->data = data;
-    ExampleIntStatisticsConstPtr statistics = data->get();
-    this->widget->clear();
-    QString content;
-    content += QString("Mean: %1\n").arg( statistics->getMean());
-    content += QString("Second Moment: %1\n").arg( statistics->getSecondMoment());
-    content += QString("Kurtosis: %1\n").arg( statistics->getKurtosis());
-    content += QString("Max: %1\n").arg( statistics->getMax());
-    content += QString("Min: %1\n").arg( statistics->getMin());
-    content += QString("Median: %1\n").arg( statistics->getMedian());
-    content += QString("Skewness: %1\n").arg( statistics->getSkewness());
-    this->widget->setText(content);
-	this->requestedType = requestedDataType;
 }
 
 void ExampleIntVisualizerStatistics::StatsSerie::update()
@@ -40,14 +13,20 @@ void ExampleIntVisualizerStatistics::StatsSerie::update()
 
 }
 
-const core::ObjectWrapperConstPtr & ExampleIntVisualizerStatistics::StatsSerie::getData() const
-{
-	return data;
-}
 
-const core::TypeInfo & ExampleIntVisualizerStatistics::StatsSerie::getRequestedDataType() const
+void ExampleIntVisualizerStatistics::StatsSerie::setupData(const core::VariantConstPtr & data)
 {
-	return requestedType;
+	ExampleIntStatisticsConstPtr statistics = data->get();
+	this->widget->clear();
+	QString content;
+	content += QString("Mean: %1\n").arg(statistics->getMean());
+	content += QString("Second Moment: %1\n").arg(statistics->getSecondMoment());
+	content += QString("Kurtosis: %1\n").arg(statistics->getKurtosis());
+	content += QString("Max: %1\n").arg(statistics->getMax());
+	content += QString("Min: %1\n").arg(statistics->getMin());
+	content += QString("Median: %1\n").arg(statistics->getMedian());
+	content += QString("Skewness: %1\n").arg(statistics->getSkewness());
+	this->widget->setText(content);
 }
 
 ExampleIntVisualizerStatistics::ExampleIntVisualizerStatistics() :
@@ -90,7 +69,7 @@ void ExampleIntVisualizerStatistics::update( double deltaTime )
 
 }
 
-plugin::IVisualizer::ISerie* ExampleIntVisualizerStatistics::createSerie( const core::TypeInfo & requestedType, const core::ObjectWrapperConstPtr & data )
+plugin::IVisualizer::ISerie* ExampleIntVisualizerStatistics::createSerie(const utils::TypeInfo & requestedType, const core::VariantConstPtr & data)
 {
 	QTextEdit* edit = new QTextEdit();
 	widget->layout()->addWidget(edit);
@@ -103,7 +82,12 @@ plugin::IVisualizer::ISerie* ExampleIntVisualizerStatistics::createSerie( const 
 
 plugin::IVisualizer::ISerie* ExampleIntVisualizerStatistics::createSerie( const ISerie* serie )
 {
-	return nullptr;
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+plugin::IVisualizer::ISerie* ExampleIntVisualizerStatistics::createSerie(const ISerie* serie, const utils::TypeInfo & requestedType, const core::VariantConstPtr & data)
+{
+	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void ExampleIntVisualizerStatistics::removeSerie( ISerie* serie )
@@ -123,7 +107,12 @@ const plugin::IVisualizer::ISerie * ExampleIntVisualizerStatistics::getActiveSer
 	return activeSerie;
 }
 
-void ExampleIntVisualizerStatistics::getSupportedTypes( core::TypeInfoList & supportedTypes ) const
+plugin::IVisualizer::ISerie * ExampleIntVisualizerStatistics::getActiveSerie()
+{
+	return activeSerie;
+}
+
+void ExampleIntVisualizerStatistics::getSupportedTypes( utils::TypeInfoList & supportedTypes ) const
 {
 	supportedTypes.push_back(typeid(ExampleIntStatistics));
 }

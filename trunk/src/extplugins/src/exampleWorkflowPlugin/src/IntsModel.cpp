@@ -19,7 +19,8 @@ QVariant IntsModel::data( const QModelIndex &index, int role /*= Qt::DisplayRole
 void IntsModel::clear()
 {
     ints->clear();
-    reset();
+	beginResetModel();
+	endResetModel();
 }
 
 void IntsModel::addValue( int val )

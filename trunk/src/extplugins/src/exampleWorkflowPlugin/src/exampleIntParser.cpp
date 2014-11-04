@@ -6,7 +6,7 @@
 
 
 ExampleIntParser::ExampleIntParser() :
-	adapter(core::ObjectWrapper::create<Ints>())
+	adapter(utils::ObjectWrapper::create<Ints>())
 {
 }
 
@@ -62,19 +62,26 @@ void ExampleIntParser::parse( const std::string & source )
 }
 
 
-void ExampleIntParser::getObjects(core::Objects& objects)
-{
-    objects.insert(adapter);
-}
-
 
 
 void ExampleIntParser::acceptedExpressions( Expressions & expressions ) const
 {
 	plugin::IParser::ExpressionDescription expDesc;
 	expDesc.description = "CSV format";
-	expDesc.types.insert(typeid(Ints));
+	expDesc.objectsTypes.push_back(typeid(Ints));
 	expressions[".*\.csv$"] = expDesc;
+}
+
+void ExampleIntParser::getObject(core::Variant& object, const core::VariantsVector::size_type idx) const
+{
+	if (idx == 0) {
+		object.set(adapter);
+	}
+}
+
+void ExampleIntParser::reset()
+{
+	throw std::logic_error("The method or operation is not implemented.");
 }
 
 

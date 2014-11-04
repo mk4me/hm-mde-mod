@@ -15,16 +15,17 @@
 #include <corelib/IParser.h>
 #include <c3dlib/C3DParser.h>
 #include <utils/DataChannel.h>
+#include <utils/SmartPtr.h>
 
 
 //! parser wczytuje plik c3d i zwraca obiekt typu AllMarkersCollection (zawiera wszystkie markery zawarte w pliku)
-class C3DMarkersParser : public plugin::IParser, public plugin::ISourceParserCapabilities
+class C3DMarkersParser : public plugin::ISourceParser
 {
     UNIQUE_ID("{B6E91A06-A22B-4FB1-839D-7764645BAE27}")
 	CLASS_DESCRIPTION("C3DMarkersParser", "C3DMarkersParser");
 private:
 	utils::ObjectWrapperPtr allmarkerCollection;
-	core::shared_ptr<c3dlib::C3DParser> parserPtr;
+	utils::shared_ptr<c3dlib::C3DParser> parserPtr;
     	
 public:
     C3DMarkersParser();
@@ -33,8 +34,12 @@ public:
 public:
 	virtual void acceptedExpressions( Expressions & expressions ) const;
 	virtual plugin::IParser* create() const;
-	virtual void getObjects( core::Objects& objects );
 	virtual void parse( const std::string & source );
+
+	virtual void getObject(core::Variant& object, const core::VariantsVector::size_type idx) const;
+
+	virtual void reset();
+
 };
 
 

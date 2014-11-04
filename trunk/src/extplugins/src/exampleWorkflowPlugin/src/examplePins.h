@@ -12,10 +12,13 @@
 
 #include <plugins/dfElements/DFPins.h>
 #include "Plugin.h"
+#include <plugins/newVdf/UniversalOutputPin.h>
+#include <plugins/newVdf/UniversalInputPin.h>
+#include <exampleWorkflowPlugin/exampleIntStatistics.h>
 
-typedef UniversalOutputPinT<ExampleIntStatistics> StatsOutputPin;
-typedef UniversalInputPinT<Ints> ExampleIntInputPin;
-typedef UniversalOutputPinT<Ints> ExampleIntOutputPin;
+typedef vdf::UniversalOutputPinT<ExampleIntStatistics> StatsOutputPin;
+typedef vdf::UniversalInputPinT<Ints> ExampleIntInputPin;
+typedef vdf::UniversalOutputPinT<Ints> ExampleIntOutputPin;
 
 //#include <dflib/Pin.h>
 //#include <dflib/IDFPin.h>

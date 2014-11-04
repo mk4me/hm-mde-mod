@@ -19,7 +19,7 @@ void QuaternionSignalCompressor::process()
 
 	//kopiuje go - przygotowuje sobie porcje danych wyjsciowych
 
-	core::shared_ptr<QuatUtils::QuatLiftingCompressor::CompressedSignal> outData(new QuatUtils::QuatLiftingCompressor::CompressedSignal);
+	utils::shared_ptr<QuatUtils::QuatLiftingCompressor::CompressedSignal> outData(new QuatUtils::QuatLiftingCompressor::CompressedSignal);
 	//kinematic::JointAngleChannel(inQuatData->getSamplesPerSecond()));
 	//outQuatData->setName("Forward lifting scheme");
 	//outQuatData->setTimeBaseUnit(inQuatData->getTimeBaseUnit());

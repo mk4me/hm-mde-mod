@@ -10,7 +10,7 @@
 #define HEADER_GUARD___EXAMPLESCALARCONFIGURATIONWIDGET_H__
 
 #include "ui_exampleScalarConfigurationWidget.h"
-#include <QtGui/QWidget>
+#include <QtWidgets/QWidget>
 
 class ExampleScalarChannelProcessor;
 

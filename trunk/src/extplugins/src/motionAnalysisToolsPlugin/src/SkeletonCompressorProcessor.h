@@ -13,12 +13,13 @@
 
 #include <dflib/Node.h>
 #include <dflib/IDFNode.h>
-#include <threading/SynchronizationPolicies.h>
+#include <threadingUtils/SynchronizationPolicies.h>
 #include <corelib/PluginCommon.h>
 #include <corelib/DataAccessors.h>
 #include <corelib/IJobManager.h>
 #include <corelib/IJob.h>
 #include <boost/bind.hpp>
+#include "corelib/Variant.h"
 
 template<class LS>
 class SkeletonCompressor : public df::ProcessingNode, public df::IDFProcessor
@@ -135,7 +136,7 @@ private:
 
 		(*outData)[idx] = newChannel;
 
-		utils::ScopedLock<utils::StrictSyncPolicy> lock(stateSync);
+		utils::ScopedLock<threadingUtils::StrictSyncPolicy> lock(stateSync);
 		--jobs;
 		if(jobs == 0){
 			sync.unlock();
@@ -144,8 +145,8 @@ private:
 
 private:
 
-	utils::StrictSyncPolicy sync;
-	utils::StrictSyncPolicy stateSync;
+	threadingUtils::StrictSyncPolicy sync;
+	threadingUtils::StrictSyncPolicy stateSync;
 	unsigned int jobs;
 
 	JointAnglesCollectionOutputPin* outPinA;
@@ -177,7 +178,7 @@ public:
 
 	virtual void produce()
 	{
-		utils::ConstObjectsList objects;
+		core::ConstVariantsList objects;
 
 		plugin::getDataManagerReader()->getObjects(objects, typeid(kinematic::JointAnglesCollection), false);		
 

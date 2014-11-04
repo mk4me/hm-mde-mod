@@ -1,30 +1,33 @@
-#define CORE_DISABLE_LOGGING
+//#define CORE_DISABLE_LOGGING
 #include <corelib/IPlugin.h>
 #include <corelib/PluginCommon.h>
 #include <corelib/IIdentifiable.h>
-#include <QtGui/QWidget>
-#include <QtGui/QPlainTextEdit>
-#include <QtGui/QLabel>
+#include <QtWidgets/QWidget>
+#include <QtWidgets/QPlainTextEdit>
+#include <QtWidgets/QLabel>
 #include <QtGui/QIcon>
 #include <memory>
 #include <fstream>
 #include <utils/ClonePolicies.h>
 #include <utils/ObjectWrapper.h>
+#include <utils/PtrPolicyStd.h>
+#include <utils/TypeInfo.h>
+#include <corelib/AbstractSerie.h>
 
 
 using namespace core;
 
-DEFINE_WRAPPER(std::string, utils::PtrPolicyBoost, utils::ClonePolicyCopyConstructor);
+DEFINE_WRAPPER(std::string, utils::PtrPolicyStd, utils::ClonePolicyCopyConstructor);
 
-
-class SampleParser : public plugin::IParser, public plugin::ISourceParserCapabilities
+//! Prosty parser, wczytuje pliki do std::string
+class SampleParser : public plugin::ISourceParser
 {
 private:
     utils::ObjectWrapperPtr object;
 
 public:
     UNIQUE_ID("{55D3B9E4-1759-4BFE-B9CF-D5C25155D442}");
-	CLASS_DESCRIPTION("Sample parser", "Sample parser");
+	CLASS_DESCRIPTION("Simple parser", "Simple parser");
     
 public:
     SampleParser() : object(utils::ObjectWrapper::create<std::string>())
@@ -32,11 +35,14 @@ public:
         
     }
 
+	//! \return pusty obiekt nowego parsera
     virtual IParser* create() const
     {
         return new SampleParser();
     }
 
+	//! Parsowanie pliku 
+	//! \param path poprawna œcie¿ka do pliku
     virtual void parse(const std::string& source)
     {
 		core::Filesystem::Path path(source);
@@ -53,39 +59,52 @@ public:
         object->set(str);
     }
 
+	//! Zwraca rozszerzenia, które s¹ obs³ugiwane przez parser 
+	//! \param extensions kolecja z roszerzeniami
 	virtual void acceptedExpressions( Expressions & expressions )  const
     {
         plugin::IParser::ExpressionDescription extDesc;
+		extDesc.objectsTypes.push_back(typeid(std::string));
         extDesc.description = "C3D format";
-        extDesc.types.insert(typeid(std::string));
         expressions[".*\\.c3d$"] = extDesc;
         extDesc.description = "AVI format";
         expressions[".*\\.avi$"] = extDesc;
+		extDesc.description = "TXT format";
+		expressions[".*\\.txt$"] = extDesc;
     }
     
-    virtual void getObjects(core::Objects& objects)
+	//! Zwraca obiekty dostarczone przez parser
+	virtual void getObject(core::Variant& object, const core::VariantsVector::size_type idx) const
     {
-        objects.insert(object);
+		if (idx == 0) {
+			object.set(this->object);
+		}
     }
+
+	//! Metoda zwalniaj¹ca sparsowane zasoby parsera
+	virtual void reset()
+	{
+		object.reset();
+	}
+
 };
 
+//! Prosty wizualizator 
 class SampleVisualizer : public plugin::IVisualizer
 {
     UNIQUE_ID("{693700C2-2EAE-4FC7-96D6-54D920D41A8F}");
 	CLASS_DESCRIPTION("Sample visualizer", "Sample visualizer");
 
-    std::string name;
     std::auto_ptr<QLabel> widget;
 	plugin::IVisualizer::ISerie * activeSerie;
 
 public:
     SampleVisualizer() :
-		name("SampleVisualizer"),
 		activeSerie(nullptr)
     {
     }
 
-	class SampleVisualizerSerie : public plugin::IVisualizer::ISerie
+	class SampleVisualizerSerie : public plugin::AbstractSerie
 	{
 	public:
 		SampleVisualizerSerie(SampleVisualizer * visualizer)
@@ -95,41 +114,16 @@ public:
 		}
 
 	public:
-		virtual const core::TypeInfo & getRequestedDataType() const
-		{
-			return requestedType;
-		}
+		virtual void update() {}
 
-		virtual void setName(const std::string & name)
+		virtual void setupData(const core::VariantConstPtr & data)
 		{
-			this->name = name;
-		}
-
-        virtual const std::string getName() const
-        {
-            return name;
-        }
-
-		virtual void setData(const core::TypeInfo & requestedDataType, const core::ObjectWrapperConstPtr & data)
-		{
-            this->data = data;
 			boost::shared_ptr<const std::string> str = data->get();
 			visualizer->widget->setText(QString::fromStdString(*str));
-			this->requestedType = requestedDataType;
 		}
-
-        virtual const core::ObjectWrapperConstPtr & getData() const
-        {
-            return data;
-        }
-
-		virtual void update() {}
 
 	private:
 		SampleVisualizer* visualizer;
-        std::string name;
-        core::ObjectWrapperConstPtr data;
-		utils::TypeInfo requestedType;
 	};
 
 	virtual void update( double deltaTime ) 
@@ -140,36 +134,47 @@ public:
 	{
 		this->activeSerie = serie;
 	}
+	
+	virtual void removeSerie(plugin::IVisualizer::ISerie *serie)
+	{
+		widget->setText("serie removed");
+	}
+		
+	virtual plugin::IVisualizer::ISerie * getActiveSerie()
+	{
+		return activeSerie;
+	}
+
 	virtual const plugin::IVisualizer::ISerie * getActiveSerie() const
 	{
 		return activeSerie;
 	}
-		
+
 	virtual IVisualizer* create() const
     {
         return new SampleVisualizer();
     }
 
-
-    virtual plugin::IVisualizer::ISerie *createSerie(const plugin::IVisualizer::ISerie*)
-    {
-        throw std::runtime_error("Not implemented");
-        return nullptr;
-    }
-
-	virtual plugin::IVisualizer::ISerie *createSerie(const core::TypeInfo & requestedType, const utils::ObjectWrapperConstPtr & data)
+	virtual plugin::IVisualizer::ISerie *createSerie(const utils::TypeInfo & requestedType, const core::VariantConstPtr & data)
 	{
-		plugin::IVisualizer::ISerie* ret = new SampleVisualizerSerie(this);
+		plugin::AbstractSerie* ret = new SampleVisualizerSerie(this);
 		ret->setName("Example serie");
 		ret->setData(requestedType, data);
 
 		return ret;
 	}
 
-	virtual void removeSerie(plugin::IVisualizer::ISerie *serie)
+
+	virtual ISerie* createSerie(const ISerie* serie, const utils::TypeInfo & requestedType, const core::VariantConstPtr & data)
 	{
-		widget->setText("serie removed");
+		throw std::logic_error("The method or operation is not implemented.");
 	}
+
+	virtual plugin::IVisualizer::ISerie *createSerie(const plugin::IVisualizer::ISerie*)
+	{
+		throw std::logic_error("The method or operation is not implemented.");
+	}
+
 
     virtual QWidget* createWidget()
     {
@@ -194,10 +199,12 @@ public:
 		return 7;
 	}
 
-	virtual void getSupportedTypes( core::TypeInfoList & supportedTypes ) const
+	virtual void getSupportedTypes( utils::TypeInfoList & supportedTypes ) const
 	{
 		supportedTypes.push_back(typeid(std::string));
 	}
+
+	
 
 };
 

@@ -1,7 +1,7 @@
 #include "QuatCompression.h"
 #include <corelib/IJob.h>
 #include <corelib/IJobManager.h>
-#include <threading/SynchronizationPolicies.h>
+#include <threadingUtils/SynchronizationPolicies.h>
 #include <corelib/PluginCommon.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/random.hpp>
@@ -18,10 +18,10 @@ class CompoundJob
 
 private:
 
-	class InnerJob : public core::IRunnable
+	class InnerJob : public threadingUtils::IRunnable
 	{
 	public:
-		InnerJob(CompoundJob * cj, core::IRunnablePtr job) : cj(cj), job(job)
+		InnerJob(CompoundJob * cj, threadingUtils::IRunnablePtr job) : cj(cj), job(job)
 		{
 
 		}
@@ -36,7 +36,7 @@ private:
 
 	private:
 		CompoundJob * cj;
-		core::IRunnablePtr job;
+		threadingUtils::IRunnablePtr job;
 	};
 
 	friend class InnerJob;
@@ -57,16 +57,16 @@ public:
 			auto jm = plugin::getJobManager();
 
 			for(auto it = jobs.begin(); it != jobs.end(); ++it){
-				jm->addJob("MotionAnalysisProcessor", "Tests", core::IRunnablePtr(new InnerJob(this, *it)));
+				jm->addJob("MotionAnalysisProcessor", "Tests", threadingUtils::IRunnablePtr(new InnerJob(this, *it)));
 			}
 
-			jobs.swap(std::list<utils::IRunnablePtr>());
+			jobs.swap(std::list<threadingUtils::IRunnablePtr>());
 
-			utils::ScopedLock<utils::StrictSyncPolicy> lock(wait);
+			threadingUtils::ScopedLock<threadingUtils::StrictSyncPolicy> lock(wait);
 		}
 	}
 
-	void addJob(core::IRunnablePtr job)
+	void addJob(threadingUtils::IRunnablePtr job)
 	{
 		jobs.push_back(job);
 	}
@@ -75,7 +75,7 @@ private:
 
 	void finalizeJob()
 	{
-		utils::ScopedLock<utils::StrictSyncPolicy> lock(synch);
+		threadingUtils::ScopedLock<threadingUtils::StrictSyncPolicy> lock(synch);
 		--counter;
 		if(counter == 0){
 			wait.unlock();
@@ -83,9 +83,9 @@ private:
 	}
 
 private:
-	std::list<utils::IRunnablePtr> jobs;
-	utils::StrictSyncPolicy wait;
-	utils::StrictSyncPolicy synch;
+	std::list<threadingUtils::IRunnablePtr> jobs;
+	threadingUtils::StrictSyncPolicy wait;
+	threadingUtils::StrictSyncPolicy synch;
 	unsigned int counter;
 	core::IJobManager * jm;
 };
@@ -134,7 +134,7 @@ MotionAnalysisTests::~MotionAnalysisTests()
 
 }
 
-typedef boost::bimap<std::string, core::shared_ptr<QuatUtils::QuatLiftingScheme>> LiftingSchemes;
+typedef boost::bimap<std::string, utils::shared_ptr<QuatUtils::QuatLiftingScheme>> LiftingSchemes;
 
 struct TestData
 {
@@ -146,13 +146,13 @@ struct TestData
 
 typedef boost::array<TestData, 4> QuaternionTestData;
 typedef boost::array<QuatUtils::QuatLiftingScheme::Data, 4> QuaternionTestResults;
-typedef std::map<core::shared_ptr<QuatUtils::QuatLiftingScheme>, QuaternionTestResults> LiftingResults;
+typedef std::map<utils::shared_ptr<QuatUtils::QuatLiftingScheme>, QuaternionTestResults> LiftingResults;
 
 struct ExperimentResult
 {
 public:
 	std::string name;
-	core::shared_ptr<QuatUtils::QuatLiftingScheme> ls;
+	utils::shared_ptr<QuatUtils::QuatLiftingScheme> ls;
 	VectorChannelReaderInterfaceConstPtr eulerInput;
 	QuatUtils::QuatLiftingScheme::Data quatReference;
 	QuatUtils::QuatLiftingScheme::Data quatInput;
@@ -221,10 +221,10 @@ void jobConvertChannel(QuaternionTestData * out, const unsigned int idx)
 	(*out)[idx].quatData = QuatCommon::convert((*out)[idx].eulerData);
 }
 
-void jobComputeForwardTransforms(core::shared_ptr<QuatUtils::QuatLiftingScheme> ls,
+void jobComputeForwardTransforms(utils::shared_ptr<QuatUtils::QuatLiftingScheme> ls,
 	LiftingResults * out, const QuaternionTestData * input, const unsigned int size)
 {
-	static utils::StrictSyncPolicy synch;
+	static threadingUtils::StrictSyncPolicy synch;
 
 	QuaternionTestResults forwardRes;
 
@@ -233,7 +233,7 @@ void jobComputeForwardTransforms(core::shared_ptr<QuatUtils::QuatLiftingScheme> 
 		ls->forwardTrans(forwardRes[i], size);
 	}
 
-	utils::ScopedLock<utils::StrictSyncPolicy> lock(synch);
+	threadingUtils::ScopedLock<threadingUtils::StrictSyncPolicy> lock(synch);
 	out->insert(LiftingResults::value_type(ls, forwardRes));
 }
 
@@ -274,7 +274,7 @@ void tangentSpaceToQuat(const QuatUtils::Vec3LiftingScheme::Data & src, QuatUtil
 	}
 }
 
-core::ObjectWrapperPtr createWrapper(const QuatUtils::Vec3LiftingScheme::Data & src,
+utils::ObjectWrapperPtr createWrapper(const QuatUtils::Vec3LiftingScheme::Data & src,
 	VectorChannelReaderInterfaceConstPtr prototype, const std::string & name)
 {		
 	auto newChannel = VectorChannelPtr(new VectorChannel(prototype->getSamplesPerSecond()));
@@ -288,14 +288,14 @@ core::ObjectWrapperPtr createWrapper(const QuatUtils::Vec3LiftingScheme::Data & 
 		newChannel->addPoint(*it);
 	}
 
-	auto ow = core::ObjectWrapper::create<VectorChannel::Interface>();
-	ow->set(core::dynamic_pointer_cast<VectorChannel::Interface>(newChannel));
-	(*ow)["core/label"] = name;
+	auto ow = utils::ObjectWrapper::create<VectorChannel::Interface>();
+	ow->set(utils::dynamic_pointer_cast<VectorChannel::Interface>(newChannel));
+	//(*ow)["core/label"] = name;
 
 	return ow;
 }
 
-core::ObjectWrapperPtr createWrapper(const QuatUtils::QuatLiftingScheme::Data & data,
+utils::ObjectWrapperPtr createWrapper(const QuatUtils::QuatLiftingScheme::Data & data,
 	VectorChannelReaderInterfaceConstPtr prototype, const std::string & name)
 {
 	auto newChannel = VectorChannelPtr(new VectorChannel(prototype->getSamplesPerSecond()));
@@ -317,9 +317,9 @@ core::ObjectWrapperPtr createWrapper(const QuatUtils::QuatLiftingScheme::Data & 
 		newChannel->addPoint(res);
 	}
 
-	auto ow = core::ObjectWrapper::create<VectorChannel::Interface>();
-	ow->set(core::dynamic_pointer_cast<VectorChannel::Interface>(newChannel));
-	(*ow)["core/label"] = name;
+	auto ow = utils::ObjectWrapper::create<VectorChannel::Interface>();
+	ow->set(utils::dynamic_pointer_cast<VectorChannel::Interface>(newChannel));
+	//(*ow)["core/label"] = name;
 
 	return ow;
 }
@@ -339,19 +339,19 @@ void MotionAnalysisTests::process()
 	{
 		CompoundJob cj(plugin::getJobManager());
 
-		cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobCreateNoisyChannel, &(testData[1]), inputData, 0.5))));
-		cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobCreateNoisyChannel, &(testData[2]), inputData, 2.0))));
-		cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobCreateNoisyChannel, &(testData[3]), inputData, 5.0))));
+		cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobCreateNoisyChannel, &(testData[1]), inputData, 0.5))));
+		cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobCreateNoisyChannel, &(testData[2]), inputData, 2.0))));
+		cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobCreateNoisyChannel, &(testData[3]), inputData, 5.0))));
 	}
 
 	//konwertujê na sygna³ kwaternionowy obs³ugiwany przez schematy liftingu
 	{
 		CompoundJob cj(plugin::getJobManager());
 
-		cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobConvertChannel, &testData, 0))));
-		cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobConvertChannel, &testData, 1))));
-		cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobConvertChannel, &testData, 2))));
-		cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobConvertChannel, &testData, 3))));
+		cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobConvertChannel, &testData, 0))));
+		cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobConvertChannel, &testData, 1))));
+		cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobConvertChannel, &testData, 2))));
+		cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobConvertChannel, &testData, 3))));
 	}
 
 	//licze odleglosci zaszumionych od oryginau
@@ -362,11 +362,11 @@ void MotionAnalysisTests::process()
 
 	//tworze mape schematów liftingu i ich opisu do póŸniejszego uruchamiania
 	LiftingSchemes liftingSchemes;
-	liftingSchemes.insert(LiftingSchemes::value_type("LinearHaar", core::shared_ptr<QuatUtils::QuatLiftingScheme>(new LinearHaarLS)));
-	liftingSchemes.insert(LiftingSchemes::value_type("QuatHaar", core::shared_ptr<QuatUtils::QuatLiftingScheme>(new QuatHarrLS)));
-	liftingSchemes.insert(LiftingSchemes::value_type("Lerp", core::shared_ptr<QuatUtils::QuatLiftingScheme>(new QuatLerpLS)));
-	liftingSchemes.insert(LiftingSchemes::value_type("Slerp", core::shared_ptr<QuatUtils::QuatLiftingScheme>(new QuatSlerpLS)));
-	//liftingSchemes.insert(LiftingSchemes::value_type("TangentSpace", core::shared_ptr<QuatUtils::QuatLiftingScheme>(new PseudoTangentSpaceLS)));
+	liftingSchemes.insert(LiftingSchemes::value_type("LinearHaar", utils::shared_ptr<QuatUtils::QuatLiftingScheme>(new LinearHaarLS)));
+	liftingSchemes.insert(LiftingSchemes::value_type("QuatHaar", utils::shared_ptr<QuatUtils::QuatLiftingScheme>(new QuatHarrLS)));
+	liftingSchemes.insert(LiftingSchemes::value_type("Lerp", utils::shared_ptr<QuatUtils::QuatLiftingScheme>(new QuatLerpLS)));
+	liftingSchemes.insert(LiftingSchemes::value_type("Slerp", utils::shared_ptr<QuatUtils::QuatLiftingScheme>(new QuatSlerpLS)));
+	//liftingSchemes.insert(LiftingSchemes::value_type("TangentSpace", utils::shared_ptr<QuatUtils::QuatLiftingScheme>(new PseudoTangentSpaceLS)));
 
 	//wyliczam forward transform dla zbiorów
 	LiftingResults forwardResults;
@@ -374,15 +374,15 @@ void MotionAnalysisTests::process()
 		CompoundJob cj(plugin::getJobManager());
 
 		for(auto it = liftingSchemes.left.begin(); it != liftingSchemes.left.end(); ++it){
-			cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobComputeForwardTransforms, it->get_right(),
+			cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobComputeForwardTransforms, it->get_right(),
 			&forwardResults, &testData, size))));
 		}
 	}
 
 	//teraz faktyczne zadania
-	std::list<core::shared_ptr<ExperimentResult>> results;
+	std::list<utils::shared_ptr<ExperimentResult>> results;
 
-	core::shared_ptr<core::ConstObjectsList> outputData(new core::ConstObjectsList);
+	utils::shared_ptr<utils::ConstObjectsList> outputData(new utils::ConstObjectsList);
 
 	{		
 		CompoundJob cj(plugin::getJobManager());
@@ -390,7 +390,7 @@ void MotionAnalysisTests::process()
 			//tylko odwrotna
 			{
 				for(auto it = liftingSchemes.begin(); it != liftingSchemes.end(); ++it){
-					auto experiment = core::shared_ptr<ExperimentResult>(new ExperimentResult);
+					auto experiment = utils::shared_ptr<ExperimentResult>(new ExperimentResult);
 					experiment->name = "Inverse transform " + it->get_left();
 					experiment->eulerInput = inputData;
 					experiment->quatInput = testData[0].quatData;
@@ -403,7 +403,7 @@ void MotionAnalysisTests::process()
 					experiment->forward = fIT->second[0];
 					results.push_back(experiment);
 
-					cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobComputeInverseTransform, experiment.get()))));
+					cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobComputeInverseTransform, experiment.get()))));
 				}
 			}
 
@@ -426,7 +426,7 @@ void MotionAnalysisTests::process()
 				for(auto it = quatLiftingSchemes.begin(); it != quatLiftingSchemes.end(); ++it){
 					for(unsigned int i = 1; i < 4; ++i){
 						for(auto tIT = denoiseThresholds.begin(); tIT != denoiseThresholds.end(); ++tIT){
-							auto experiment = core::shared_ptr<ExperimentResult>(new ExperimentResult);
+							auto experiment = utils::shared_ptr<ExperimentResult>(new ExperimentResult);
 							experiment->name = "Denoise-Transform " + it->get_left() + " n " +
 								boost::lexical_cast<std::string>(testData[i].noise) + " t " +
 								boost::lexical_cast<std::string>(*tIT);
@@ -441,7 +441,7 @@ void MotionAnalysisTests::process()
 
 							experiment->forward = fIT->second[i];
 							results.push_back(experiment);
-							cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobDenoiseChannel, experiment.get(), osg::DegreesToRadians(*tIT)))));
+							cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobDenoiseChannel, experiment.get(), osg::DegreesToRadians(*tIT)))));
 						}
 					}
 				}
@@ -465,7 +465,7 @@ void MotionAnalysisTests::process()
 
 				for(auto it = quatLiftingSchemes.begin(); it != quatLiftingSchemes.end(); ++it){
 					for(auto sIT = settingsSet.begin(); sIT != settingsSet.end(); ++sIT){
-						auto experiment = core::shared_ptr<ExperimentResult>(new ExperimentResult);
+						auto experiment = utils::shared_ptr<ExperimentResult>(new ExperimentResult);
 						experiment->name = "Compression " + it->get_left() + " levels ";
 
 						for(auto s = (*sIT).begin(); s != (*sIT).end(); ++s){
@@ -484,7 +484,7 @@ void MotionAnalysisTests::process()
 
 						experiment->forward = fIT->second[0];
 						results.push_back(experiment);
-						cj.addJob(utils::IRunnablePtr(new utils::FunctorRunnable(boost::bind(&jobCompressChannel, experiment.get(), *sIT))));
+						cj.addJob(threadingUtils::IRunnablePtr(new threadingUtils::FunctorRunnable(boost::bind(&jobCompressChannel, experiment.get(), *sIT))));
 					}
 				}
 			}
@@ -559,10 +559,10 @@ void MotionAnalysisTests::process()
 	}
 
 	for(unsigned int i = 1; i < 4; ++i){
-		auto ow = core::ObjectWrapper::create<VectorChannel::Interface>();
-		ow->set(core::const_pointer_cast<VectorChannel::Interface>(testData[i].eulerData));
-		(*ow)["core/label"] = "Noisy data: " + boost::lexical_cast<std::string>(testData[i].noise)
-			+ " dist: " + boost::lexical_cast<std::string>(testData[i].distance);
+		auto ow = utils::ObjectWrapper::create<VectorChannel::Interface>();
+		ow->set(utils::const_pointer_cast<VectorChannel::Interface>(testData[i].eulerData));
+		// (*ow)["core/label"] = "Noisy data: " + boost::lexical_cast<std::string>(testData[i].noise)
+		//	+ " dist: " + boost::lexical_cast<std::string>(testData[i].distance);
 		outputData->push_back(ow);
 	}
 
@@ -570,16 +570,16 @@ void MotionAnalysisTests::process()
 
 		//dane wlasciwe
 		auto result = *it;
-		auto ow = core::ObjectWrapper::create<VectorChannel::Interface>();
+		auto ow = utils::ObjectWrapper::create<VectorChannel::Interface>();
 		ow->set(VectorChannelReaderInterfacePtr(result->convertedOut));
 
-		(*ow)["core/label"] = result->name + " distInput: " + boost::lexical_cast<std::string>(result->distInput)
-			+ " distReference: " + boost::lexical_cast<std::string>(result->distReference);
+		//(*ow)["core/label"] = result->name + " distInput: " + boost::lexical_cast<std::string>(result->distInput)
+		//	+ " distReference: " + boost::lexical_cast<std::string>(result->distReference);
 
 		outputData->push_back(ow);
 
 		//detale
-		ow = core::ObjectWrapper::create<VectorChannel::Interface>();
+		ow = utils::ObjectWrapper::create<VectorChannel::Interface>();
 		auto convertedOut = VectorChannelPtr(new VectorChannel(result->convertedOut->getSamplesPerSecond()));
 		convertedOut->setName("Details " + result->name);
 		convertedOut->setTimeBaseUnit(result->convertedOut->getTimeBaseUnit());
@@ -599,11 +599,11 @@ void MotionAnalysisTests::process()
 		}
 
 		ow->set(VectorChannelReaderInterfacePtr(convertedOut));
-		(*ow)["core/label"] = convertedOut->getName();
+		//(*ow)["core/label"] = convertedOut->getName();
 		outputData->push_back(ow);
 
 		if((*it)->modifiedForward.empty() == false){
-			ow = core::ObjectWrapper::create<VectorChannel::Interface>();
+			ow = utils::ObjectWrapper::create<VectorChannel::Interface>();
 			auto convertedOut = VectorChannelPtr(new VectorChannel(result->convertedOut->getSamplesPerSecond()));
 			convertedOut->setName("Modified details " + result->name);
 			convertedOut->setTimeBaseUnit(result->convertedOut->getTimeBaseUnit());
@@ -623,7 +623,7 @@ void MotionAnalysisTests::process()
 			}
 
 			ow->set(VectorChannelReaderInterfacePtr(convertedOut));
-			(*ow)["core/label"] = convertedOut->getName();
+			//(*ow)["core/label"] = convertedOut->getName();
 			outputData->push_back(ow);
 		}
 	}

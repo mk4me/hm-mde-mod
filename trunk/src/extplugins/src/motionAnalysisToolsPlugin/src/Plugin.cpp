@@ -38,7 +38,7 @@ CORE_PLUGIN_BEGIN("MotionDataAnalysisPlugin", core::UID::GenerateUniqueID("{07F0
 
 	CORE_PLUGIN_ADD_OBJECT_WRAPPER(QuatUtils::QuatLiftingCompressor::CompressedSignal);
 
-	CORE_PLUGIN_ADD_OBJECT_WRAPPER(core::ConstObjectsList);
+	CORE_PLUGIN_ADD_OBJECT_WRAPPER(utils::ConstObjectsList);
 
 	// dodajemy element przetwarzajacy - klase tego elementu, musi on mieæ domyœlny konstruktor
 	// Wszystkie tego typu elementy musz¹ znaleŸæ siê wewn¹trz serwisu. 

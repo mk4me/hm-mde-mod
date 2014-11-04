@@ -14,7 +14,7 @@
 #include <corelib/Filesystem.h>
 #include <corelib/IParser.h>
 
-class ExampleIntParser : public plugin::IParser, public plugin::ISourceParserCapabilities
+class ExampleIntParser : public plugin::ISourceParser
 {
     UNIQUE_ID("{A4B67836-E8C8-4E77-A8D9-60E3089D2510}");
 	CLASS_DESCRIPTION("Example Int Parser", "Example Int Parser")
@@ -24,11 +24,14 @@ public:
 
 	virtual void acceptedExpressions( Expressions & expressions ) const;
 	virtual plugin::IParser* create() const;
-	virtual void getObjects( core::Objects& objects );
 	virtual void parse( const std::string & source );
 
+	virtual void getObject(core::Variant& object, const core::VariantsVector::size_type idx) const;
+
+	virtual void reset();
+
 private:
-    core::ObjectWrapperPtr adapter;
+    utils::ObjectWrapperPtr adapter;
 };
 
 

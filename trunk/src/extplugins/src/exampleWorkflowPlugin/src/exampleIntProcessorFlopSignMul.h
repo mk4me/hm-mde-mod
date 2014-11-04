@@ -13,6 +13,8 @@
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
 #include "Plugin.h"
 #include "examplePins.h"
+#include "dflib/Node.h"
+#include "dflib/IDFNode.h"
 
 
 class ExampleIntProccesorFlopSignMul : public df::ProcessingNode, public df::IDFProcessor
