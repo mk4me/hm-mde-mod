@@ -1,0 +1,11 @@
+BEGIN_PLUGIN_PROJECT("dynamic")
+
+SET_PRIVATE_HEADERS(
+	Plugin.h
+)
+
+SET_SOURCE_FILES(
+	Plugin.cpp	
+)
+
+END_PLUGIN_PROJECT()
