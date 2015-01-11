@@ -9,6 +9,8 @@
 
 class DummyCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
+	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}")
+
 public:
 	DummyCalibrationAlgorithm() {}
 	virtual ~DummyCalibrationAlgorithm(){}
@@ -69,6 +71,8 @@ private:
 
 class DummyMotionEstimationAlgorithm : public IMU::IMUCostumeMotionEstimationAlgorithm
 {
+	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-1000000A563F}")
+
 public:
 	DummyMotionEstimationAlgorithm() {}
 	//! Destruktor wirtualny
@@ -115,6 +119,7 @@ private:
 //! Generic quaternion-based orientation filter - generates orientation as a quaternion using IMU sensor fusion
 class DummyOrientationEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
 {
+	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-2000000A563F}")
 public:
 	DummyOrientationEstimationAlgorithm() {}
 	//! Make it polymorphic
