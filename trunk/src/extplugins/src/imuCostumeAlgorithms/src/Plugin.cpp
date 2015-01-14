@@ -9,7 +9,7 @@
 
 class DummyCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
-	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}")
+	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}");
 
 public:
 	DummyCalibrationAlgorithm() {}
@@ -206,8 +206,6 @@ bool PluginHelper::init()
 {
 	bool ret = true;
 
-	static core::IDataManagerReader::ObjectObserverPtr objectObserver;
-
 	try{
 		streamQuerryingThread = plugin::getThreadPool()->get("imuCOstumeAlgorithms", "Costume Stream Processing");
 		auto imuDS = core::querySource<IMU::IIMUDataSource>(plugin::getSourceManager());
@@ -254,6 +252,9 @@ bool PluginHelper::init()
 
 			imuDS->registerSkeletonModel(dummySkeleton);
 		}
+
+		objectObserver.reset(new MotionDataObserver);
+		plugin::getDataManagerReader()->addObserver(objectObserver);
 	}
 	catch (...){
 		ret = false;
