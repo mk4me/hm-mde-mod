@@ -120,36 +120,54 @@ private:
 class DummyOrientationEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-2000000A563F}")
+private:
+	std::ofstream myLogFile;
 public:
-	DummyOrientationEstimationAlgorithm() {}
+	DummyOrientationEstimationAlgorithm() 
+	{
+		myLogFile.open("DOEA_log.txt", std::ios::trunc);
+	}
+
 	//! Make it polymorphic
-	virtual ~DummyOrientationEstimationAlgorithm() {}
+	virtual ~DummyOrientationEstimationAlgorithm() 
+	{
+	}
 
 	//! \return Nowy algorytm estymacji
-	virtual IIMUOrientationEstimationAlgorithm * create() const override { return new DummyOrientationEstimationAlgorithm; };
+	virtual IIMUOrientationEstimationAlgorithm * create() const override 
+	{
+		return new DummyOrientationEstimationAlgorithm; 
+	};
 
 	// Public Interface
 	//! Returns internal filter name
-	virtual std::string name() const override { return "DummyOrientationEstimationAlgorithm"; }
+	virtual std::string name() const override 
+	{ 
+		return "DummyOrientationEstimationAlgorithm"; 
+	}
 
 	//! Resets filter internal state
-	virtual void reset() override {}
+	virtual void reset() override 
+	{
+	}
 
 	//! Returns number (n) of frames that are probably unstable after filter create() / reset() - call estimate() at least (n) times
-	virtual unsigned int approximateEstimationDelay() const override { return 0; }
+	virtual unsigned int approximateEstimationDelay() const override 
+	{ 
+		return 0; 
+	}
 
 	//! Calculates orientation from sensor fusion
 	/*!
-	\param inAcc accelerometer vector from IMU
-	\param inGyro gyroscope vector from IMU
-	\param inMag magnetometer vector from IMU
-	\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
-	\return Returns estimated orientation.
+		\param inAcc accelerometer vector from IMU
+		\param inGyro gyroscope vector from IMU
+		\param inMag magnetometer vector from IMU
+		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
+		\return Returns estimated orientation.
 	*/
-	virtual osg::Quat estimate(const osg::Vec3d& inAcc,
-		const osg::Vec3d& inGyro, const osg::Vec3d& inMag,
-		const double inDeltaT) override
+	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro, const osg::Vec3d& inMag,	const double inDeltaT) override
 	{
+		//myLogFile << inDeltaT << std::endl;
 		return osg::Quat(0, 0, 0, 1);
 	}
 };
@@ -301,7 +319,7 @@ void PluginHelper::run()
 			//ms.jointsOrientations
 			if (ms.jointsOrientations.size() > 0)
 			{
-				osg::Quat superQuat = ms.jointsOrientations.at(0);
+				osg::Quat superQuat = ms.jointsOrientations["HumanoidRoot"];
 
 			}
 
