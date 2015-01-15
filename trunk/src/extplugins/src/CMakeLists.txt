@@ -5,5 +5,5 @@ ADD_PROJECT(plugin_exampleWorkflowPlugin "c3dlib;corelib;dflib;plugin_newVdf;plu
 ADD_PROJECT(plugin_exampleDomainDataPlugin "dflib;plugin_newVdf;plugin_c3d;plugin_dfElements;corelib;BOOST;utils;OSG;QT;kinematiclib;osgui;TINYXML2;c3dlib" "exampleDomainDataPlugin")
 ADD_PROJECT(plugin_c3dMarkers "corelib;plugin_newVdf;plugin_c3d;BOOST;utils;OSG;kinematiclib;TINYXML2;QT;c3dlib" "c3dMarkers")
 ADD_PROJECT(plugin_motionAnalysisTools "corelib;dflib;plugin_dfElements;plugin_newVdf;plugin_c3d;plugin_kinematic;BOOST;utils;OSG;kinematiclib;TINYXML2;QT;c3dlib;QuatUtils" "motionAnalysisToolsPlugin")
-ADD_PROJECT(plugin_imuCostumeAlgorithms "corelib;plugin_imuCostume;BOOST;utils;OSG;kinematiclib;QT" "imuCostumeAlgorithms")
+ADD_PROJECT(plugin_imuCostumeAlgorithms "corelib;plugin_imuCostume;BOOST;utils;OSG;kinematiclib;QT;EIGEN3" "imuCostumeAlgorithms")
 END_PROJECTS_GROUP()

@@ -297,7 +297,14 @@ void PluginHelper::run()
 			IMU::SkeletonMotionState ms;
 			skeletonMotion->stream->data(ms);
 
-			//TODO - ronimy coœ z danymi
+			//TODO - robimy coœ z danymi
+			//ms.jointsOrientations
+			if (ms.jointsOrientations.size() > 0)
+			{
+				osg::Quat superQuat = ms.jointsOrientations.at(0);
+
+			}
+
 		}
 		else{
 			//nie mam danych - czekam
