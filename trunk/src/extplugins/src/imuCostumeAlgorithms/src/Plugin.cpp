@@ -228,14 +228,16 @@ kinematic::JointPtr createJoint(kinematic::JointPtr parent,
 	const std::string & name, const osg::Vec3 & position,
 	const osg::Quat & orientation = osg::Quat(0, 0, 0, 1))
 {
-	auto ret = utils::make_shared<kinematic::Joint>();
-	ret->name = name;
-	ret->parent = parent;
+	kinematic::JointData jd;
+	jd.name = name;
+	jd.orientation = orientation;
+	jd.position = position;
+
+	auto ret = kinematic::Joint::create(jd);	
 	if (parent != nullptr){
 		parent->children.push_back(ret);
-	}	
-	ret->position = position;
-	ret->orientation = orientation;
+	}
+
 	return ret;
 }
 
