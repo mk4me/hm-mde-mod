@@ -7,6 +7,10 @@
 #include <plugins/imuCostume/IMUCostumeCalibrationAlgorithm.h>
 #include <plugins/imuCostume/IMUCostumeMotionEstimationAlgorithm.h>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/mutex.hpp>
+
 class DummyCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}");
@@ -120,17 +124,23 @@ private:
 class DummyOrientationEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-2000000A563F}")
+
 private:
-	std::ofstream myLogFile;
+	std::ofstream _myLogFile;
+	boost::posix_time::ptime _lastTick;
+	boost::mutex _estimateMutex;
+
 public:
 	DummyOrientationEstimationAlgorithm() 
 	{
-		myLogFile.open("DOEA_log.txt", std::ios::trunc);
+		_myLogFile.open("DOEA_log.txt", std::ios::trunc);
+		_lastTick = boost::posix_time::microsec_clock::local_time();
 	}
 
 	//! Make it polymorphic
 	virtual ~DummyOrientationEstimationAlgorithm() 
 	{
+		_myLogFile.close();
 	}
 
 	//! \return Nowy algorytm estymacji
@@ -165,9 +175,18 @@ public:
 		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
 		\return Returns estimated orientation.
 	*/
-	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro, const osg::Vec3d& inMag,	const double inDeltaT) override
+	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro, const osg::Vec3d& inMag, const double inDeltaT) override
 	{
-		//myLogFile << inDeltaT << std::endl;
+		boost::unique_lock<boost::mutex> superLock(_estimateMutex);
+
+		boost::posix_time::ptime nowTick = boost::posix_time::microsec_clock::local_time();
+		boost::posix_time::time_duration elapsedMicroSec = nowTick - _lastTick;
+		_lastTick = nowTick;
+
+		_myLogFile << inDeltaT << "\t" << elapsedMicroSec.total_milliseconds() << std::endl;
+
+		_myLogFile.flush();
+
 		return osg::Quat(0, 0, 0, 1);
 	}
 };
