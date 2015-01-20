@@ -8,6 +8,7 @@
 #include <plugins/imuCostume/IMUCostumeMotionEstimationAlgorithm.h>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
 
@@ -183,7 +184,7 @@ public:
 		boost::posix_time::time_duration elapsedMicroSec = nowTick - _lastTick;
 		_lastTick = nowTick;
 
-		_myLogFile << inDeltaT << "\t" << elapsedMicroSec.total_milliseconds() << std::endl;
+		_myLogFile << "[ThreadID:]" << boost::this_thread::get_id() << "\t" << inDeltaT << "\t" << elapsedMicroSec.total_milliseconds() << std::endl;
 
 		_myLogFile.flush();
 
