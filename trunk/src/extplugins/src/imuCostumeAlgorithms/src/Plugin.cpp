@@ -12,6 +12,10 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include "filter_lib\lib_main.h"
+
+#include "CQuatIO.h"
+
 class DummyCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}");
@@ -121,6 +125,9 @@ private:
 	IMU::SensorsMapping sensorsMapping;
 };
 
+//! OSG visualizer
+CQuatIO quatWriter(true);
+
 //! Generic quaternion-based orientation filter - generates orientation as a quaternion using IMU sensor fusion
 class DummyOrientationEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
 {
@@ -128,20 +135,36 @@ class DummyOrientationEstimationAlgorithm : public IMU::IIMUOrientationEstimatio
 
 private:
 	std::ofstream _myLogFile;
+	std::ofstream _myRawFile;
+	std::stringstream _ssMyLogFile;
+	std::stringstream _ssMyRawFile;
 	boost::posix_time::ptime _lastTick;
-	boost::mutex _estimateMutex;
+	//boost::mutex _estimateMutex;
+	static unsigned int _IntID;	// TODO: remove me
+	unsigned int _thisID;
+	unsigned int _sampleNum;
+	std::list<osg::Quat> _accum;
+	std::unique_ptr<ImuFilters::IOrientationFilter> _internalFilterImpl;
 
 public:
-	DummyOrientationEstimationAlgorithm() 
+	DummyOrientationEstimationAlgorithm() : _internalFilterImpl(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_INSTANTENOUS_KALMAN))
+		//_internalFilterImpl(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_AQKF_KALMAN))
 	{
-		_myLogFile.open("DOEA_log.txt", std::ios::trunc);
+		//_internalFilterImpl.swap(std::move(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_INSTANTENOUS_KALMAN)));
+		std::string logName = "DOEA_log_" + std::to_string(_IntID) + ".txt";
+		std::string rawDataName = "RAW_log_" + std::to_string(_IntID) + ".txt";
+		_myLogFile.open(logName, std::ios::trunc);
+		_myRawFile.open(rawDataName, std::ios::trunc);
 		_lastTick = boost::posix_time::microsec_clock::local_time();
+		_sampleNum = 0;
+		_thisID = ++_IntID;
 	}
 
 	//! Make it polymorphic
 	virtual ~DummyOrientationEstimationAlgorithm() 
 	{
 		_myLogFile.close();
+		_myRawFile.close();
 	}
 
 	//! \return Nowy algorytm estymacji
@@ -154,18 +177,20 @@ public:
 	//! Returns internal filter name
 	virtual std::string name() const override 
 	{ 
-		return "DummyOrientationEstimationAlgorithm"; 
+		return "DummyOrientationEstimationAlgorithm(Inst)";
+		//return "DummyOrientationEstimationAlgorithm(AQKf)"; 
 	}
 
 	//! Resets filter internal state
-	virtual void reset() override 
+	virtual void reset() override
 	{
+		_internalFilterImpl->reset();
 	}
 
 	//! Returns number (n) of frames that are probably unstable after filter create() / reset() - call estimate() at least (n) times
 	virtual unsigned int approximateEstimationDelay() const override 
 	{ 
-		return 0; 
+		return _internalFilterImpl->approximateEstimationDelay();
 	}
 
 	//! Calculates orientation from sensor fusion
@@ -178,20 +203,66 @@ public:
 	*/
 	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro, const osg::Vec3d& inMag, const double inDeltaT) override
 	{
-		boost::unique_lock<boost::mutex> superLock(_estimateMutex);
+		//boost::unique_lock<boost::mutex> superLock(_estimateMutex);
 
 		boost::posix_time::ptime nowTick = boost::posix_time::microsec_clock::local_time();
 		boost::posix_time::time_duration elapsedMicroSec = nowTick - _lastTick;
 		_lastTick = nowTick;
 
-		_myLogFile << "[ThreadID:]" << boost::this_thread::get_id() << "\t" << inDeltaT << "\t" << elapsedMicroSec.total_milliseconds() << std::endl;
+		double myTime = elapsedMicroSec.total_milliseconds() / 1000.0;
 
-		_myLogFile.flush();
+		//osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, inDeltaT);
+		osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, myTime);
+		quatWriter.SetQuat(retQ, _thisID);
 
-		return osg::Quat(0, 0, 0, 1);
+		_ssMyRawFile << inAcc.x() << "\t" << inAcc.y() << "\t" << inAcc.z() << "\t" <<
+					  inGyro.x() << "\t" << inGyro.y() << "\t" << inGyro.z() << "\t" <<
+					  inMag.x() << "\t" << inMag.y() << "\t" << inMag.z() << "\t" << std::endl;
+
+		//double accLen = inAcc.length();
+		//double gyroLen = inGyro.length();
+		//double magLen = inMag.length();
+		//double sum = accLen + gyroLen + magLen;
+		//do sprawdzenia:
+		//-œrednia ruchoma na wektorach(ile próbek ? ) - œrednia sk³adowych - jak siê to ma do d³ugoœci ? (nie moge zdeformowac tych wektorow)
+		//-sprawdzic dane przemka i moje - dlugosci wektorów (acc moze mieæ zmienne ale ok. 10 w spoczynku, ¿yro - co to? magnetometr - ko³o 1, bo kierunek?)
+		//-plot w matlabie wartosci przema i moich z raw sprzetu  - np fukcja do kreslenia 3 skladowych - plot_vec
+
+		// SMA
+		//_accum.push_back(retQ);
+		//if (_accum.size() > 5)
+		//	_accum.pop_front();
+
+		//osg::Quat startQ = retQ;
+		//osg::Quat finalQ = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		//for each (osg::Quat tmpQ in _accum)
+		//{
+		//	finalQ = tmpQ * finalQ;
+		//}
+		//retQ.slerp(0.5, startQ, finalQ);
+
+		//_myLogFile << "[ThreadID:]" << boost::this_thread::get_id() << "\t" << inDeltaT << "\t" << elapsedMicroSec.total_milliseconds() << std::endl;
+		_ssMyLogFile << _sampleNum << "\t" << inDeltaT << "\t" << myTime << "\t" << 
+			retQ.x() << "\t" << retQ.y() << "\t" << retQ.z() << "\t" <<  retQ.w() << std::endl;
+
+		// Write log
+		if ((_sampleNum % 200) == 0)
+		{
+			_myRawFile << _ssMyRawFile.str();
+			_myLogFile << _ssMyLogFile.str();
+			_ssMyRawFile.str("");
+			_ssMyLogFile.str("");
+			_myRawFile.flush();
+			_myLogFile.flush();
+		}
+
+		++_sampleNum;
+
+		return retQ;
 	}
 };
 
+unsigned int DummyOrientationEstimationAlgorithm::_IntID = 0; // TODO: remove me
 volatile bool PluginHelper::finish = false;
 core::IDataManagerReader::ObjectObserverPtr PluginHelper::objectObserver = core::IDataManagerReader::ObjectObserverPtr();
 core::Thread PluginHelper::streamQuerryingThread = core::Thread();

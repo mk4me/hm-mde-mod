@@ -2,6 +2,7 @@ BEGIN_PLUGIN_PROJECT("dynamic")
 
 SET_PRIVATE_HEADERS(
 	Plugin.h
+	CQuatIO.h
 	filter_lib/lib_main.h
 	filter_lib/IOrientationFilter.h
 	filter_lib/internal/CAQKfFilter.h
@@ -15,7 +16,8 @@ SET_PRIVATE_HEADERS(
 )
 
 SET_SOURCE_FILES(
-	Plugin.cpp	
+	Plugin.cpp
+	CQuatIO.cpp	
 	filter_lib/lib_main.cpp
 	filter_lib/internal/CAQKfFilter.cpp
 	filter_lib/internal/CInstFilter.cpp
