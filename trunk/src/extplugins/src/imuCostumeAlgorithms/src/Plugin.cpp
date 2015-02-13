@@ -201,7 +201,8 @@ public:
 		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
 		\return Returns estimated orientation.
 	*/
-	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro, const osg::Vec3d& inMag, const double inDeltaT) override
+	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
+		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
 	{
 		//boost::unique_lock<boost::mutex> superLock(_estimateMutex);
 
@@ -361,7 +362,7 @@ bool PluginHelper::init()
 			j = createJoint(vt, "skullbase", osg::Vec3(0, 15, 0));
 			j = createJoint(j, "skull_tip", osg::Vec3(0, 23, 0));
 
-			imuDS->registerSkeletonModel(dummySkeleton);
+			imuDS->registerSkeletonModel(utils::make_shared<IMU::Skeleton>(core::UID::GenerateUniqueID("{D7801231-BACA-42C6-9A8E-2000000A563F}"), *dummySkeleton));
 		}
 
 		objectObserver.reset(new MotionDataObserver);
@@ -425,7 +426,7 @@ void PluginHelper::run()
 }
 
 CORE_EXT_PLUGIN_BEGIN("imuCostumeAlgorithms", core::UID::GenerateUniqueID("{3C0C0000-9351-46CC-A5FE-52AA182E1279}"), "en", \
-	PluginHelper::init, PluginHelper::deinit, \
+	PluginHelper::init, nullptr, PluginHelper::deinit, \
 	"vendorName", "vendorShortName", "vendorDescription", "vendorContact", \
 	1, 0, 0);
 
