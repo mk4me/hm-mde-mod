@@ -288,9 +288,9 @@ public:
 				dhm->isTypeCompatible(c.type, typeid(IMU::CostumeSkeletonMotion)) == true){
 
 				PluginHelper::skeletonMotion = c.currentValue->get();
-				PluginHelper::streamObserver.reset(new threadingUtils::ResetableStreamStatusObserver);
-				PluginHelper::skeletonMotion->stream->attachObserver(PluginHelper::streamObserver);
-				PluginHelper::streamQuerryingThread.run(&PluginHelper::run);
+				//PluginHelper::streamObserver.reset(new threadingUtils::ResetableStreamStatusObserver);
+				//PluginHelper::skeletonMotion->stream->attachObserver(PluginHelper::streamObserver);
+				//PluginHelper::streamQuerryingThread.run(&PluginHelper::run);
 				break;
 			}
 		}
@@ -314,12 +314,17 @@ kinematic::JointPtr createJoint(kinematic::JointPtr parent,
 	return ret;
 }
 
+osg::Vec3 norm(const osg::Vec3 & in)
+{
+	return in / 183.0;
+}
+
 bool PluginHelper::init()
 {
 	bool ret = true;
 
 	try{
-		streamQuerryingThread = plugin::getThreadPool()->get("imuCOstumeAlgorithms", "Costume Stream Processing");
+		//streamQuerryingThread = plugin::getThreadPool()->get("imuCOstumeAlgorithms", "Costume Stream Processing");
 		auto imuDS = core::querySource<IMU::IIMUDataSource>(plugin::getSourceManager());
 		if (imuDS == nullptr){
 			ret = false;
@@ -331,42 +336,42 @@ bool PluginHelper::init()
 			//szkielet
 			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>();
 			dummySkeleton->name = "DummySkeleton";
-			dummySkeleton->root = createJoint(kinematic::JointPtr(), "HumanoidRoot", osg::Vec3(0, 0, 0));
+			dummySkeleton->root = createJoint(kinematic::JointPtr(), "HumanoidRoot", norm(osg::Vec3(0, 0, 0)));
 
 			//lewa noga
-			auto j = createJoint(dummySkeleton->root, "l_hip", osg::Vec3(16, 0, 0));
-			j = createJoint(j, "l_knee", osg::Vec3(0, -50, 0));
-			j = createJoint(j, "l_ankle", osg::Vec3(0, -45, 0));
-			j = createJoint(j, "l_forefoot_tip", osg::Vec3(0, 0, 26.5));
+			auto j = createJoint(dummySkeleton->root, "l_hip", norm(osg::Vec3(16, 0, 0)));
+			j = createJoint(j, "l_knee", norm(osg::Vec3(0, 0, -50)));
+			j = createJoint(j, "l_ankle", norm(osg::Vec3(0, 0, -45)));
+			j = createJoint(j, "l_forefoot_tip", norm(osg::Vec3(0, 26.5, 0)));
 
 			//prawa noga
-			j = createJoint(dummySkeleton->root, "r_hip", osg::Vec3(-16, 0, 0));
-			j = createJoint(j, "r_knee", osg::Vec3(0, -50, 0));
-			j = createJoint(j, "r_ankle", osg::Vec3(0, -45, 0));
-			j = createJoint(j, "r_forefoot_tip", osg::Vec3(0, 0, 26.5));
+			j = createJoint(dummySkeleton->root, "r_hip", norm(osg::Vec3(-16, 0, 0)));
+			j = createJoint(j, "r_knee", norm(osg::Vec3(0, 0, -50)));
+			j = createJoint(j, "r_ankle", norm(osg::Vec3(0, 0, -45)));
+			j = createJoint(j, "r_forefoot_tip", norm(osg::Vec3(0, 26.5, 0)));
 
 			//w górê
-			auto vt = createJoint(dummySkeleton->root, "vt1", osg::Vec3(50, 0, 0));
+			auto vt = createJoint(dummySkeleton->root, "vt1", norm(osg::Vec3(0, 0, 50)));
 			// w lewo
-			j = createJoint(vt, "l_shoulder", osg::Vec3(23.5, 0, 0));
-			j = createJoint(j, "l_elbow", osg::Vec3(0, -30, 0));
-			j = createJoint(j, "l_wrist", osg::Vec3(0, -30, 0));
-			j = createJoint(j, "l_middle_distal_tip", osg::Vec3(0, -17, 0));
+			j = createJoint(vt, "l_shoulder", norm(osg::Vec3(23.5, 0, 0)));
+			j = createJoint(j, "l_elbow", norm(osg::Vec3(0, 0, -30)));
+			j = createJoint(j, "l_wrist", norm(osg::Vec3(0, 0, -30)));
+			j = createJoint(j, "l_middle_distal_tip", norm(osg::Vec3(0, 0, -17)));
 			//w prawo
-			j = createJoint(vt, "r_shoulder", osg::Vec3(-23.5, 0, 0));
-			j = createJoint(j, "r_elbow", osg::Vec3(0, -30, 0));
-			j = createJoint(j, "r_wrist", osg::Vec3(0, -30, 0));
-			j = createJoint(j, "r_middle_distal_tip", osg::Vec3(0, -17, 0));
+			j = createJoint(vt, "r_shoulder", norm(osg::Vec3(-23.5, 0, 0)));
+			j = createJoint(j, "r_elbow", norm(osg::Vec3(0, 0, -30)));
+			j = createJoint(j, "r_wrist", norm(osg::Vec3(0, 0, -30)));
+			j = createJoint(j, "r_middle_distal_tip", norm(osg::Vec3(0, 0, -17)));
 
 			//g³owa
-			j = createJoint(vt, "skullbase", osg::Vec3(0, 15, 0));
-			j = createJoint(j, "skull_tip", osg::Vec3(0, 23, 0));
+			j = createJoint(vt, "skullbase", norm(osg::Vec3(0, 0, 15)));
+			j = createJoint(j, "skull_tip", norm(osg::Vec3(0, 0, 23)));
 
 			imuDS->registerSkeletonModel(utils::make_shared<IMU::Skeleton>(core::UID::GenerateUniqueID("{D7801231-BACA-42C6-9A8E-2000000A563F}"), *dummySkeleton));
 		}
 
-		objectObserver.reset(new MotionDataObserver);
-		plugin::getDataManagerReader()->addObserver(objectObserver);
+		//objectObserver.reset(new MotionDataObserver);
+		//plugin::getDataManagerReader()->addObserver(objectObserver);
 	}
 	catch (...){
 		ret = false;
@@ -406,14 +411,14 @@ void PluginHelper::run()
 		if (streamObserver->modified() == true)
 		{
 			//s¹ dane - pobieram
-			IMU::SkeletonMotionState ms;
+			IMU::MotionStream::value_type ms;
 			skeletonMotion->stream->data(ms);
 
 			//TODO - robimy coœ z danymi
 			//ms.jointsOrientations
-			if (ms.jointsOrientations.size() > 0)
+			if (ms.second.jointsOrientations.size() > 0)
 			{
-				osg::Quat superQuat = ms.jointsOrientations["HumanoidRoot"];
+				osg::Quat superQuat = ms.second.jointsOrientations["HumanoidRoot"];
 
 			}
 
