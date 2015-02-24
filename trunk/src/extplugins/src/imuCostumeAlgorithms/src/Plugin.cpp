@@ -14,7 +14,9 @@
 
 #include "filter_lib\lib_main.h"
 
-#include "CQuatIO.h"
+//#include "CQuatIO.h" // For external visualization only
+//! OSG visualizer
+//CQuatIO quatWriter(true);
 
 class DummyCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
@@ -142,11 +144,8 @@ private:
 	boost::posix_time::ptime _lastTick;
 };
 
-//! OSG visualizer
-CQuatIO quatWriter(true);
-
-//! Generic quaternion-based orientation filter - generates orientation as a quaternion using IMU sensor fusion
-class DummyOrientationEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
+//! Matlab dumper (fake filter) - generates orientation as a quaternion using IMU sensor fusion
+class MatlabDumpEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-2000000A563F}")
 
@@ -157,56 +156,61 @@ private:
 	std::stringstream _ssMyRawFile;
 	boost::posix_time::ptime _lastTick;
 	//boost::mutex _estimateMutex;
-	static unsigned int _IntID;	// TODO: remove me
+	static unsigned int _IntID;
 	unsigned int _thisID;
 	unsigned int _sampleNum;
-	std::list<osg::Quat> _accum;
 	std::unique_ptr<ImuFilters::IOrientationFilter> _internalFilterImpl;
 
 public:
-	DummyOrientationEstimationAlgorithm() : _internalFilterImpl(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_INSTANTENOUS_KALMAN))
-		//_internalFilterImpl(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_AQKF_KALMAN))
+	//! Simple constructor
+	MatlabDumpEstimationAlgorithm() : _internalFilterImpl(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_INSTANTENOUS_KALMAN))
 	{
-		//_internalFilterImpl.swap(std::move(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_INSTANTENOUS_KALMAN)));
+		// Open files and initialize timer
 		std::string logName = "DOEA_log_" + std::to_string(_IntID) + ".txt";
 		std::string rawDataName = "RAW_log_" + std::to_string(_IntID) + ".txt";
 		_myLogFile.open(logName, std::ios::trunc);
 		_myRawFile.open(rawDataName, std::ios::trunc);
 		_lastTick = boost::posix_time::microsec_clock::local_time();
+
+		// Set object counter (unique id is not provided) and reset sample number
 		_sampleNum = 0;
 		_thisID = ++_IntID;
 	}
 
 	//! Make it polymorphic
-	virtual ~DummyOrientationEstimationAlgorithm() 
+	virtual ~MatlabDumpEstimationAlgorithm()
 	{
+		// Force close any opened files
 		_myLogFile.close();
 		_myRawFile.close();
 	}
 
-	//! \return Nowy algorytm estymacji
+	//! Returns the actual implementation
 	virtual IIMUOrientationEstimationAlgorithm * create() const override 
 	{
-		return new DummyOrientationEstimationAlgorithm; 
+		// Return implementation
+		return new MatlabDumpEstimationAlgorithm;
 	};
 
 	// Public Interface
 	//! Returns internal filter name
 	virtual std::string name() const override 
 	{ 
-		return "DummyOrientationEstimationAlgorithm(Inst)";
-		//return "DummyOrientationEstimationAlgorithm(AQKf)"; 
+		// Return the actual role
+		return "Matlab Dumper (Instantenous Estimation Algorithm)";
 	}
 
 	//! Resets filter internal state
 	virtual void reset() override
 	{
+		// Reset internal state
 		_internalFilterImpl->reset();
 	}
 
 	//! Returns number (n) of frames that are probably unstable after filter create() / reset() - call estimate() at least (n) times
 	virtual unsigned int approximateEstimationDelay() const override 
 	{ 
+		// Returns required delay
 		return _internalFilterImpl->approximateEstimationDelay();
 	}
 
@@ -223,47 +227,29 @@ public:
 	{
 		//boost::unique_lock<boost::mutex> superLock(_estimateMutex);
 
+		// Get real time
 		boost::posix_time::ptime nowTick = boost::posix_time::microsec_clock::local_time();
 		boost::posix_time::time_duration elapsedMicroSec = nowTick - _lastTick;
 		_lastTick = nowTick;
-
 		double myTime = elapsedMicroSec.total_milliseconds() / 1000.0;
 
-		//osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, inDeltaT);
+		// Perform actual estimation
 		osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, myTime);
-		quatWriter.SetQuat(retQ, _thisID);
+		
+		// External visualizer
+		//quatWriter.SetQuat(retQ, _thisID);
 
+		// Save Accelerometer (XYZ), Gyroscope (XYZ) and Magnetometer(XYZ)
 		_ssMyRawFile << inAcc.x() << "\t" << inAcc.y() << "\t" << inAcc.z() << "\t" <<
 					  inGyro.x() << "\t" << inGyro.y() << "\t" << inGyro.z() << "\t" <<
 					  inMag.x() << "\t" << inMag.y() << "\t" << inMag.z() << "\t" << std::endl;
 
-		//double accLen = inAcc.length();
-		//double gyroLen = inGyro.length();
-		//double magLen = inMag.length();
-		//double sum = accLen + gyroLen + magLen;
-		//do sprawdzenia:
-		//-œrednia ruchoma na wektorach(ile próbek ? ) - œrednia sk³adowych - jak siê to ma do d³ugoœci ? (nie moge zdeformowac tych wektorow)
-		//-sprawdzic dane przemka i moje - dlugosci wektorów (acc moze mieæ zmienne ale ok. 10 w spoczynku, ¿yro - co to? magnetometr - ko³o 1, bo kierunek?)
-		//-plot w matlabie wartosci przema i moich z raw sprzetu  - np fukcja do kreslenia 3 skladowych - plot_vec
-
-		// SMA
-		//_accum.push_back(retQ);
-		//if (_accum.size() > 5)
-		//	_accum.pop_front();
-
-		//osg::Quat startQ = retQ;
-		//osg::Quat finalQ = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		//for each (osg::Quat tmpQ in _accum)
-		//{
-		//	finalQ = tmpQ * finalQ;
-		//}
-		//retQ.slerp(0.5, startQ, finalQ);
-
 		//_myLogFile << "[ThreadID:]" << boost::this_thread::get_id() << "\t" << inDeltaT << "\t" << elapsedMicroSec.total_milliseconds() << std::endl;
+		// Save sample number, both time bases and estimated quaternon
 		_ssMyLogFile << _sampleNum << "\t" << inDeltaT << "\t" << myTime << "\t" << 
 			retQ.x() << "\t" << retQ.y() << "\t" << retQ.z() << "\t" <<  retQ.w() << std::endl;
 
-		// Write log
+		// Write log (every 200 sample, so we won't generate I/O operations too often)
 		if ((_sampleNum % 200) == 0)
 		{
 			_myRawFile << _ssMyRawFile.str();
@@ -273,14 +259,234 @@ public:
 			_myRawFile.flush();
 			_myLogFile.flush();
 		}
-
+		
+		// Increment sample number
 		++_sampleNum;
 
+		// Return estimated quaternion
+		return osg::Quat(1.0, 0.0, 0.0, 0.0);
 		return retQ;
 	}
 };
 
-unsigned int DummyOrientationEstimationAlgorithm::_IntID = 0; // TODO: remove me
+//! Instantenous Kalman filter - generates orientation as a quaternion using IMU sensor fusion
+class InstantenousKalmanEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
+{
+	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-20AC8B76ACBF}")
+
+private:
+	//! Time basis
+	boost::posix_time::ptime _lastTick;
+	//! Internal filter implementation
+	std::unique_ptr<ImuFilters::IOrientationFilter> _internalFilterImpl;
+
+public:
+	//! Simple constructor
+	InstantenousKalmanEstimationAlgorithm() : _internalFilterImpl(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_INSTANTENOUS_KALMAN))
+	{
+		// Initialize timer
+		_lastTick = boost::posix_time::microsec_clock::local_time();
+	}
+
+	//! Make it polymorphic
+	virtual ~InstantenousKalmanEstimationAlgorithm()
+	{
+	}
+
+	//! Returns the actual implementation
+	virtual IIMUOrientationEstimationAlgorithm * create() const override
+	{
+		return new InstantenousKalmanEstimationAlgorithm;
+	};
+
+	// Public Interface
+	//! Returns internal filter name
+	virtual std::string name() const override
+	{
+		return "Software Orientation Estimation (Instatenous Kalman Filter)"; 
+	}
+
+	//! Resets filter internal state
+	virtual void reset() override
+	{
+		// Reset internal state
+		_internalFilterImpl->reset();
+	}
+
+	//! Returns number (n) of frames that are probably unstable after filter create() / reset() - call estimate() at least (n) times
+	virtual unsigned int approximateEstimationDelay() const override
+	{
+		// Return number of samples required for this filter to run
+		return _internalFilterImpl->approximateEstimationDelay();
+	}
+
+	//! Calculates orientation from sensor fusion
+	/*!
+		\param inAcc accelerometer vector from IMU
+		\param inGyro gyroscope vector from IMU
+		\param inMag magnetometer vector from IMU
+		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
+		\return Returns estimated orientation.
+	*/
+	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
+		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
+	{
+		// Get real time
+		boost::posix_time::ptime nowTick = boost::posix_time::microsec_clock::local_time();
+		boost::posix_time::time_duration elapsedMicroSec = nowTick - _lastTick;
+		_lastTick = nowTick;
+		double myTime = elapsedMicroSec.total_milliseconds() / 1000.0;
+
+		// Actual estimation
+		osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, myTime);
+		
+		// Return estimated value
+		return osg::Quat(0.0, 1.0, 0.0, 0.0);
+		return retQ;
+	}
+};
+
+//! Generic quaternion-based orientation filter - generates orientation as a quaternion using IMU sensor fusion
+class AQKfKalmanEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
+{
+	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-4F5E6346FEBF}")
+
+private:
+	//! Time basis
+	boost::posix_time::ptime _lastTick;
+	//! Internal filter implementation
+	std::unique_ptr<ImuFilters::IOrientationFilter> _internalFilterImpl;
+
+public:
+	//! Simple constructor
+	AQKfKalmanEstimationAlgorithm() : _internalFilterImpl(ImuFilters::createFilter(ImuFilters::IOrientationFilter::FT_AQKF_KALMAN))
+	{
+		// Initialize timer
+		_lastTick = boost::posix_time::microsec_clock::local_time();
+	}
+
+	//! Make it polymorphic
+	virtual ~AQKfKalmanEstimationAlgorithm()
+	{
+	}
+
+	//! Returns the actual implementation
+	virtual IIMUOrientationEstimationAlgorithm * create() const override
+	{
+		return new AQKfKalmanEstimationAlgorithm;
+	};
+
+	// Public Interface
+	//! Returns internal filter name
+	virtual std::string name() const override
+	{
+		return "Software Orientation Estimation (AQKf Kalman Filter)";
+	}
+
+	//! Resets filter internal state
+	virtual void reset() override
+	{
+		// Reset internal state
+		_internalFilterImpl->reset();
+	}
+
+	//! Returns number (n) of frames that are probably unstable after filter create() / reset() - call estimate() at least (n) times
+	virtual unsigned int approximateEstimationDelay() const override
+	{
+		// Return number of samples required for this filter to run
+		return _internalFilterImpl->approximateEstimationDelay();
+	}
+
+	//! Calculates orientation from sensor fusion
+	/*!
+	\param inAcc accelerometer vector from IMU
+	\param inGyro gyroscope vector from IMU
+	\param inMag magnetometer vector from IMU
+	\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
+	\return Returns estimated orientation.
+	*/
+	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
+		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
+	{
+		// Get real time
+		boost::posix_time::ptime nowTick = boost::posix_time::microsec_clock::local_time();
+		boost::posix_time::time_duration elapsedMicroSec = nowTick - _lastTick;
+		_lastTick = nowTick;
+		double myTime = elapsedMicroSec.total_milliseconds() / 1000.0;
+
+		// Actual estimation
+		osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, myTime);
+
+		// Return estimated value
+		return osg::Quat(0.0, 0.0, 1.0, 0.0);
+		return retQ;
+	}
+};
+
+//! Generic quaternion-based orientation filter - generates orientation as a quaternion using IMU sensor fusion
+class HardwareKalmanEstimationAlgorithm : public IMU::IIMUOrientationEstimationAlgorithm
+{
+	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-12B41D2BD142}")
+
+private:
+	
+
+public:
+	//! Simple constructor
+	HardwareKalmanEstimationAlgorithm() 
+	{
+	}
+
+	//! Make it polymorphic
+	virtual ~HardwareKalmanEstimationAlgorithm()
+	{
+	}
+
+	//! Returns the actual implementation
+	virtual IIMUOrientationEstimationAlgorithm * create() const override
+	{
+		return new HardwareKalmanEstimationAlgorithm;
+	};
+
+	// Public Interface
+	//! Returns internal filter name
+	virtual std::string name() const override
+	{
+		return "Hardware Orientation Estimation (Simple Kalman Filter)";
+	}
+
+	//! Resets filter internal state
+	virtual void reset() override
+	{
+		// Not needed
+	}
+
+	//! Returns number (n) of frames that are probably unstable after filter create() / reset() - call estimate() at least (n) times
+	virtual unsigned int approximateEstimationDelay() const override
+	{
+		// Not needed
+		return 0;
+	}
+
+	//! Calculates orientation from sensor fusion
+	/*!
+		\param inAcc accelerometer vector from IMU
+		\param inGyro gyroscope vector from IMU
+		\param inMag magnetometer vector from IMU
+		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
+		\return Returns estimated orientation.
+	*/
+	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
+		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
+	{
+		// Not needed - straigh through processing
+		return osg::Quat(0.0, 0.0, 0.0, 1.0);
+		return orient;
+	}
+};
+
+// Helper ID for Matlab Dumper Estimation Algorithm
+unsigned int MatlabDumpEstimationAlgorithm::_IntID = 0;
 volatile bool PluginHelper::finish = false;
 core::IDataManagerReader::ObjectObserverPtr PluginHelper::objectObserver = core::IDataManagerReader::ObjectObserverPtr();
 core::Thread PluginHelper::streamQuerryingThread = core::Thread();
@@ -349,7 +555,13 @@ bool PluginHelper::init()
 		else{			
 			imuDS->registerCostumeCalibrationAlgorithm(new DummyCalibrationAlgorithm);
 			imuDS->registerMotionEstimationAlgorithm(new DummyMotionEstimationAlgorithm);
-			imuDS->registerOrientationEstimationAlgorithm(new DummyOrientationEstimationAlgorithm);
+			
+			// Register all orientation estimation algorithms
+			imuDS->registerOrientationEstimationAlgorithm(new MatlabDumpEstimationAlgorithm);
+			imuDS->registerOrientationEstimationAlgorithm(new InstantenousKalmanEstimationAlgorithm);
+			imuDS->registerOrientationEstimationAlgorithm(new AQKfKalmanEstimationAlgorithm);
+			imuDS->registerOrientationEstimationAlgorithm(new HardwareKalmanEstimationAlgorithm);
+
 			//szkielet
 			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>();
 			dummySkeleton->name = "DummySkeleton";
