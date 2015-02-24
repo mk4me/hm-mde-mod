@@ -116,13 +116,30 @@ public:
 	virtual MotionState estimate(const MotionState & motionState,
 		const IMU::SensorsData & data, const double inDeltaT) override
 	{
-		return motionState;
+		static double accTime = 0.0;
+		
+		boost::posix_time::ptime nowTick = boost::posix_time::microsec_clock::local_time();
+		boost::posix_time::time_duration elapsedMicroSec = nowTick - _lastTick;
+		_lastTick = nowTick;
+		double myTime = elapsedMicroSec.total_milliseconds() / 1000.0;
+
+		accTime += myTime;
+
+		MotionState newMotionState = motionState;
+		for (auto& keyVal : newMotionState.jointsOrientations)
+		{
+			keyVal.second = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		}
+
+		newMotionState.jointsOrientations["HumanoidRoot"] = osg::Quat(accTime, osg::Vec3d(1.0, 0.0, 0.0));
+		return newMotionState;
 	}
 
 private:
 	kinematic::SkeletonConstPtr skeleton;
 	IMU::IMUCostumeCalibrationAlgorithm::SensorsAdjustemnts sensorsAdjustment;
 	IMU::SensorsMapping sensorsMapping;
+	boost::posix_time::ptime _lastTick;
 };
 
 //! OSG visualizer

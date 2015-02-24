@@ -16,7 +16,7 @@
 
 // Memory leaks
 #ifdef _DEBUG
-	#include <vld.h>
+//	#include <vld.h>
 #endif
 
 namespace ImuFilters
