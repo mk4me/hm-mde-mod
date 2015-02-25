@@ -14,9 +14,9 @@
 
 #include "filter_lib\lib_main.h"
 
-//#include "CQuatIO.h" // For external visualization only
+#include "CQuatIO.h" // For external visualization only
 //! OSG visualizer
-//CQuatIO quatWriter(true);
+CQuatIO quatWriter(true);
 
 class DummyCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
@@ -237,6 +237,7 @@ public:
 		osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, myTime);
 		
 		// External visualizer
+		quatWriter.SetQuat(orient, _thisID);
 		//quatWriter.SetQuat(retQ, _thisID);
 
 		// Save Accelerometer (XYZ), Gyroscope (XYZ) and Magnetometer(XYZ)
