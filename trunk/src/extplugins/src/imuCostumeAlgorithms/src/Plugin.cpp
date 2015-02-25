@@ -14,9 +14,13 @@
 
 #include "filter_lib\lib_main.h"
 
-#include "CQuatIO.h" // For external visualization only
-//! OSG visualizer
-CQuatIO quatWriter(true);
+//#define FAKE_FILTER_OUTPUT // if defined, Q(XYZW) = matlab (1000), inst (0100), aqkf (0010), hw (0001)
+#define OUTPUT_MATLAB_TO_OSG // if defined, matlab filter starts to send data to an external visualizer
+
+#ifdef OUTPUT_MATLAB_TO_OSG
+	#include "CQuatIO.h" // For external visualization only
+	CQuatIO quatWriter(true);
+#endif
 
 class DummyCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
@@ -236,9 +240,11 @@ public:
 		// Perform actual estimation
 		osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, myTime);
 		
+#ifdef OUTPUT_MATLAB_TO_OSG
 		// External visualizer
 		quatWriter.SetQuat(orient, _thisID);
 		//quatWriter.SetQuat(retQ, _thisID);
+#endif
 
 		// Save Accelerometer (XYZ), Gyroscope (XYZ) and Magnetometer(XYZ)
 		_ssMyRawFile << inAcc.x() << "\t" << inAcc.y() << "\t" << inAcc.z() << "\t" <<
@@ -265,8 +271,11 @@ public:
 		++_sampleNum;
 
 		// Return estimated quaternion
+#ifdef FAKE_FILTER_OUTPUT
 		return osg::Quat(1.0, 0.0, 0.0, 0.0);
+#else // !FAKE_FILTER_OUTPUT
 		return retQ;
+#endif // FAKE_FILTER_OUTPUT
 	}
 };
 
@@ -342,8 +351,11 @@ public:
 		osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, myTime);
 		
 		// Return estimated value
+#ifdef FAKE_FILTER_OUTPUT
 		return osg::Quat(0.0, 1.0, 0.0, 0.0);
+#else // !FAKE_FILTER_OUTPUT
 		return retQ;
+#endif
 	}
 };
 
@@ -419,8 +431,11 @@ public:
 		osg::Quat retQ = _internalFilterImpl->estimate(inAcc, inGyro, inMag, myTime);
 
 		// Return estimated value
+#ifdef FAKE_FILTER_OUTPUT
 		return osg::Quat(0.0, 0.0, 1.0, 0.0);
+#else // !FAKE_FILTER_OUTPUT
 		return retQ;
+#endif // FAKE_FILTER_OUTPUT
 	}
 };
 
@@ -481,8 +496,11 @@ public:
 		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
 	{
 		// Not needed - straigh through processing
+#ifdef FAKE_FILTER_OUTPUT
 		return osg::Quat(0.0, 0.0, 0.0, 1.0);
+#else // !FAKE_FILTER_OUTPUT
 		return orient;
+#endif // FAKE_FILTER_OUTPUT
 	}
 };
 
