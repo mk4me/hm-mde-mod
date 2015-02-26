@@ -200,6 +200,7 @@ public:
 		newMotionState.jointsOrientations["skullbase"] = quatReader.GetQuat(18);
 		newMotionState.jointsOrientations["skull_tip"] = quatReader.GetQuat(19);
 #else // !ACCEPT_EXTERNAL_QUATS
+		// "Vae victis!", Brennus, 390 BC
 		// Update cache
 		for (auto& keyVal : data)
 		{
@@ -209,34 +210,37 @@ public:
 
 		newMotionState.jointsOrientations["HumanoidRoot"] = _dataCache[8];//_dataCache[0];
 
-		////lewa noga
-		//newMotionState.jointsOrientations["l_hip"] = _dataCache[1];
-		//newMotionState.jointsOrientations["l_knee"] = _dataCache[2];
-		//newMotionState.jointsOrientations["l_ankle"] = _dataCache[3];
-		//newMotionState.jointsOrientations["l_forefoot_tip"] = _dataCache[4];
+		//koncowy odcinek(lydka) swiruje, nogi sa zamienione a indeksy sie zgadzaja
 
-		////prawa noga
-		//newMotionState.jointsOrientations["r_hip"] = _dataCache[5];
-		//newMotionState.jointsOrientations["r_knee"] = _dataCache[6];
-		//newMotionState.jointsOrientations["r_ankle"] = _dataCache[7];
-		//newMotionState.jointsOrientations["r_forefoot_tip"] = _dataCache[8];
+		////lewa noga (zamieniona z praw¹)
+		newMotionState.jointsOrientations["r_hip"] =  _dataCache[6] * _dataCache[8].inverse(); // do roota 
+		newMotionState.jointsOrientations["r_knee"] = _dataCache[10] * _dataCache[6].inverse(); // do biodra
+		newMotionState.jointsOrientations["l_ankle"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.jointsOrientations["l_forefoot_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+
+		////prawa noga (zamieniona z praw¹)
+		newMotionState.jointsOrientations["l_hip"] = _dataCache[7] * _dataCache[8].inverse(); // do roota
+		newMotionState.jointsOrientations["l_knee"] = _dataCache[9] * _dataCache[7].inverse(); // do biodra
+		newMotionState.jointsOrientations["r_ankle"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.jointsOrientations["r_forefoot_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 
 		////w górê
-		//newMotionState.jointsOrientations["vt1"] = _dataCache[9];
-		//// w lewo
-		//newMotionState.jointsOrientations["l_shoulder"] = _dataCache[10];
-		//newMotionState.jointsOrientations["l_elbow"] = _dataCache[11];
-		//newMotionState.jointsOrientations["l_wrist"] = _dataCache[12];
-		//newMotionState.jointsOrientations["l_middle_distal_tip"] = _dataCache[13];
-		////w prawo
-		//newMotionState.jointsOrientations["r_shoulder"] = _dataCache[14];
-		//newMotionState.jointsOrientations["r_elbow"] = _dataCache[15];
-		//newMotionState.jointsOrientations["r_wrist"] = _dataCache[16];
-		//newMotionState.jointsOrientations["r_middle_distal_tip"] = _dataCache[17];
+		newMotionState.jointsOrientations["vt1"] = _dataCache[4] * _dataCache[8].inverse(); //osg::Quat(0.0, 0.0, 0.0, 1.0);
+		
+		//// w lewo (zamieniona z praw¹)
+		newMotionState.jointsOrientations["r_shoulder"] = _dataCache[0] * _dataCache[4].inverse(); // do pleców
+		newMotionState.jointsOrientations["r_elbow"] = _dataCache[3] * _dataCache[0].inverse(); // do ramienia
+		newMotionState.jointsOrientations["l_wrist"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.jointsOrientations["l_middle_distal_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		////w prawo (zamieniona z praw¹)
+		newMotionState.jointsOrientations["l_shoulder"] = _dataCache[5] * _dataCache[4].inverse(); // do pleców
+		newMotionState.jointsOrientations["l_elbow"] = _dataCache[11] * _dataCache[5].inverse(); // do ramienia
+		newMotionState.jointsOrientations["r_wrist"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.jointsOrientations["r_middle_distal_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 
 		////g³owa
-		//newMotionState.jointsOrientations["skullbase"] = _dataCache[18];
-		//newMotionState.jointsOrientations["skull_tip"] = _dataCache[19];
+		newMotionState.jointsOrientations["skullbase"] = _dataCache[2] * _dataCache[4].inverse(); // do pleców
+		newMotionState.jointsOrientations["skull_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 #endif // ACCEPT_EXTERNAL_QUATS
 
 		return newMotionState;
