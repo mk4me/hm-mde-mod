@@ -14,7 +14,7 @@
 
 #include "filter_lib\lib_main.h"
 
-#define FAKE_FILTER_OUTPUT // if defined, Q(XYZW) = matlab (1000), inst (0100), aqkf (0010), hw (0001)
+//#define FAKE_FILTER_OUTPUT // if defined, Q(XYZW) = matlab (1000), inst (0100), aqkf (0010), hw (0001)
 //#define OUTPUT_MATLAB_TO_OSG // if defined, matlab filter starts to send data to an external visualizer
 //#define ACCEPT_EXTERNAL_QUATS // if defined, motion estimator will accept external quaternions
 #define OVERRIDE_CALIBRATION // if defined, raw quatenrions will be passed
@@ -200,10 +200,43 @@ public:
 		newMotionState.jointsOrientations["skullbase"] = quatReader.GetQuat(18);
 		newMotionState.jointsOrientations["skull_tip"] = quatReader.GetQuat(19);
 #else // !ACCEPT_EXTERNAL_QUATS
-		//for (auto& keyVal : newMotionState.jointsOrientations)
-		//{
-		//	keyVal.second = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		//}
+		// Update cache
+		for (auto& keyVal : data)
+		{
+			_dataCache[keyVal.first] = keyVal.second.orientation;
+		}
+
+
+		newMotionState.jointsOrientations["HumanoidRoot"] = _dataCache[8];//_dataCache[0];
+
+		////lewa noga
+		//newMotionState.jointsOrientations["l_hip"] = _dataCache[1];
+		//newMotionState.jointsOrientations["l_knee"] = _dataCache[2];
+		//newMotionState.jointsOrientations["l_ankle"] = _dataCache[3];
+		//newMotionState.jointsOrientations["l_forefoot_tip"] = _dataCache[4];
+
+		////prawa noga
+		//newMotionState.jointsOrientations["r_hip"] = _dataCache[5];
+		//newMotionState.jointsOrientations["r_knee"] = _dataCache[6];
+		//newMotionState.jointsOrientations["r_ankle"] = _dataCache[7];
+		//newMotionState.jointsOrientations["r_forefoot_tip"] = _dataCache[8];
+
+		////w górê
+		//newMotionState.jointsOrientations["vt1"] = _dataCache[9];
+		//// w lewo
+		//newMotionState.jointsOrientations["l_shoulder"] = _dataCache[10];
+		//newMotionState.jointsOrientations["l_elbow"] = _dataCache[11];
+		//newMotionState.jointsOrientations["l_wrist"] = _dataCache[12];
+		//newMotionState.jointsOrientations["l_middle_distal_tip"] = _dataCache[13];
+		////w prawo
+		//newMotionState.jointsOrientations["r_shoulder"] = _dataCache[14];
+		//newMotionState.jointsOrientations["r_elbow"] = _dataCache[15];
+		//newMotionState.jointsOrientations["r_wrist"] = _dataCache[16];
+		//newMotionState.jointsOrientations["r_middle_distal_tip"] = _dataCache[17];
+
+		////g³owa
+		//newMotionState.jointsOrientations["skullbase"] = _dataCache[18];
+		//newMotionState.jointsOrientations["skull_tip"] = _dataCache[19];
 #endif // ACCEPT_EXTERNAL_QUATS
 
 		return newMotionState;
@@ -214,6 +247,7 @@ private:
 	IMU::IMUCostumeCalibrationAlgorithm::SensorsAdjustemnts sensorsAdjustment;
 	IMU::SensorsMapping sensorsMapping;
 	boost::posix_time::ptime _lastTick;
+	std::map<imuCostume::Costume::SensorID, osg::Quat> _dataCache;
 };
 
 //! Matlab dumper (fake filter) - generates orientation as a quaternion using IMU sensor fusion
@@ -565,20 +599,25 @@ public:
 	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
 		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
 	{
+		// TODO: remove me
+		// should be R IJK, getting IJK R
+		osg::Quat superOrient(orient.y(), orient.z(), orient.w(), orient.x());
+
 		// Not callibrated?
 		if (!_callibrated)
 		{
-			_calibQuat = orient.inverse();
+			_calibQuat = superOrient.inverse();
 			_callibrated = true;
 		}
 
 		// Not needed - straigh through processing
 #ifdef FAKE_FILTER_OUTPUT
-		osg::Quat fakeQ(0.001, 0.002, 0.003, 0.998);
+		osg::Quat fakeQ = osg::Quat(3.14 / 4.0, osg::Vec3d(1.0, 0.0, 0.0)); //fakeQ(0.001, 0.002, 0.003, 0.998);
 		return fakeQ;
 #else // !FAKE_FILTER_OUTPUT
-		osg::Quat gE = orient * _calibQuat;
-		return osg::Quat(gE.x(), gE.y(), gE.z(), gE.w()); // Align my global orientation frame with osg global orientation frame
+		osg::Quat gE = superOrient * _calibQuat;
+		gE = gE.inverse();
+		return gE; // Align my global orientation frame with osg global orientation frame
 #endif // FAKE_FILTER_OUTPUT
 	}
 };
