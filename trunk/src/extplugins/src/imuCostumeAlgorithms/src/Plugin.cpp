@@ -83,8 +83,8 @@ public:
 		for (auto& keyValue : sa)
 		{
 			keyValue.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
-			//keyValue.second.rotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
-			keyValue.second.rotation = osg::Quat(3.14 / 2, osg::Vec3d(1.0, 0.0, 0.0));
+			keyValue.second.rotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+			//keyValue.second.rotation = osg::Quat(3.14 / 2, osg::Vec3d(1.0, 0.0, 0.0));
 		}
 		return true;
 #else
@@ -98,7 +98,7 @@ public:
 			sa[keyValue.first].rotation = keyValue.second.orientation;//.inverse();
 			_sensorCallibrated.insert(keyValue.first);
 		}
-		tu jest rozwalone - nei wiem czy faktycznie mam podawac lokalne poprawki do kalibracji? i czy mi nie neguj¹ kwaternionu kalibracyjnego
+
 		// Aligned all sensors
 		if (_sensorCallibrated.size() == sa.size())
 			return true;
@@ -513,11 +513,13 @@ class HardwareKalmanEstimationAlgorithm : public IMU::IIMUOrientationEstimationA
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-12B41D2BD142}")
 
 private:
-	
+	//! Nasty hack
+	osg::Quat _calibQuat;
+	bool _callibrated;
 
 public:
 	//! Simple constructor
-	HardwareKalmanEstimationAlgorithm() 
+	HardwareKalmanEstimationAlgorithm() : _callibrated (false)
 	{
 	}
 
@@ -563,11 +565,20 @@ public:
 	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
 		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
 	{
+		// Not callibrated?
+		if (!_callibrated)
+		{
+			_calibQuat = orient.inverse();
+			_callibrated = true;
+		}
+
 		// Not needed - straigh through processing
 #ifdef FAKE_FILTER_OUTPUT
-		return osg::Quat(0.0, 0.0, 0.0, 1.0);
+		osg::Quat fakeQ(0.001, 0.002, 0.003, 0.998);
+		return fakeQ;
 #else // !FAKE_FILTER_OUTPUT
-		return orient;
+		osg::Quat gE = orient * _calibQuat;
+		return osg::Quat(gE.x(), gE.y(), gE.z(), gE.w()); // Align my global orientation frame with osg global orientation frame
 #endif // FAKE_FILTER_OUTPUT
 	}
 };
