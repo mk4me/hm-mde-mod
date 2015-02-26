@@ -14,28 +14,36 @@
 
 #include "filter_lib\lib_main.h"
 
-//#define FAKE_FILTER_OUTPUT // if defined, Q(XYZW) = matlab (1000), inst (0100), aqkf (0010), hw (0001)
-#define OUTPUT_MATLAB_TO_OSG // if defined, matlab filter starts to send data to an external visualizer
+#define FAKE_FILTER_OUTPUT // if defined, Q(XYZW) = matlab (1000), inst (0100), aqkf (0010), hw (0001)
+//#define OUTPUT_MATLAB_TO_OSG // if defined, matlab filter starts to send data to an external visualizer
+//#define ACCEPT_EXTERNAL_QUATS // if defined, motion estimator will accept external quaternions
+#define OVERRIDE_CALIBRATION // if defined, raw quatenrions will be passed
 
 #ifdef OUTPUT_MATLAB_TO_OSG
 	#include "CQuatIO.h" // For external visualization only
 	CQuatIO quatWriter(true);
-#endif
+#endif // OUTPUT_MATLAB_TO_OSG
 
-class DummyCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
+#ifdef ACCEPT_EXTERNAL_QUATS
+	#include "CQuatIO.h" // For external input only
+	CQuatIO quatReader(false);
+#endif // ACCEPT_EXTERNAL_QUATS
+
+
+class InertialCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}");
 
 public:
-	DummyCalibrationAlgorithm() {}
-	virtual ~DummyCalibrationAlgorithm(){}
+	InertialCalibrationAlgorithm() {}
+	virtual ~InertialCalibrationAlgorithm(){}
 
 	//! \return Nowy algorytm kalibracji
-	virtual IMUCostumeCalibrationAlgorithm * create() const override { return new DummyCalibrationAlgorithm; }
+	virtual IMUCostumeCalibrationAlgorithm * create() const override { return new InertialCalibrationAlgorithm; }
 
 	// Public Interface
 	//! Returns internal filter name
-	virtual std::string name() const override { return "DummyCalibrationAlgorithm"; }
+	virtual std::string name() const override { return "Inertial callibration algorithm"; }
 
 	//! Resets algo internal state
 	virtual void reset() override { SensorsAdjustemnts().swap(sa); }
@@ -64,13 +72,39 @@ public:
 
 	//! Calculates orientation from sensor fusion
 	/*!
-	\param data Dane z IMU
-	\param inDeltaT Czas od poprzedniej ramki danych
-	\return Returns if calibration successful and sufficient.
+		\param data Dane z IMU
+		\param inDeltaT Czas od poprzedniej ramki danych
+		\return Returns if calibration successful and sufficient.
 	*/
 	virtual bool calibrate(const IMU::SensorsData & data, const double inDeltaT) override
 	{
+#ifdef OVERRIDE_CALIBRATION
+		// No callibration
+		for (auto& keyValue : sa)
+		{
+			keyValue.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
+			//keyValue.second.rotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+			keyValue.second.rotation = osg::Quat(3.14 / 2, osg::Vec3d(1.0, 0.0, 0.0));
+		}
 		return true;
+#else
+		// Make copy of received data
+		IMU::SensorsData myData = data;
+
+		// Align with global coordinate system
+		for (auto& keyValue : myData)
+		{
+			sa[keyValue.first].offset = osg::Vec3d(0.0, 0.0, 0.0);
+			sa[keyValue.first].rotation = keyValue.second.orientation;//.inverse();
+			_sensorCallibrated.insert(keyValue.first);
+		}
+		tu jest rozwalone - nei wiem czy faktycznie mam podawac lokalne poprawki do kalibracji? i czy mi nie neguj¹ kwaternionu kalibracyjnego
+		// Aligned all sensors
+		if (_sensorCallibrated.size() == sa.size())
+			return true;
+		else
+			return false;
+#endif // OVERRIDE_CALIBRATION
 	}
 
 	//! \return Dane kalibracyjne szkieletu, poprawki dla sensorów
@@ -82,6 +116,7 @@ public:
 private:
 
 	SensorsAdjustemnts sa;
+	std::set<imuCostume::Costume::SensorID> _sensorCallibrated;
 };
 
 class DummyMotionEstimationAlgorithm : public IMU::IMUCostumeMotionEstimationAlgorithm
@@ -132,12 +167,45 @@ public:
 		accTime += myTime;
 
 		MotionState newMotionState = motionState;
-		for (auto& keyVal : newMotionState.jointsOrientations)
-		{
-			keyVal.second = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		}
 
-		newMotionState.jointsOrientations["HumanoidRoot"] = osg::Quat(accTime, osg::Vec3d(1.0, 0.0, 0.0));
+#ifdef ACCEPT_EXTERNAL_QUATS
+		newMotionState.jointsOrientations["HumanoidRoot"] = quatReader.GetQuat(0);
+
+		//lewa noga
+		newMotionState.jointsOrientations["l_hip"] = quatReader.GetQuat(1);
+		newMotionState.jointsOrientations["l_knee"] = quatReader.GetQuat(2);
+		newMotionState.jointsOrientations["l_ankle"] = quatReader.GetQuat(3);
+		newMotionState.jointsOrientations["l_forefoot_tip"] = quatReader.GetQuat(4);
+
+		//prawa noga
+		newMotionState.jointsOrientations["r_hip"] = quatReader.GetQuat(5);
+		newMotionState.jointsOrientations["r_knee"] = quatReader.GetQuat(6);
+		newMotionState.jointsOrientations["r_ankle"] = quatReader.GetQuat(7);
+		newMotionState.jointsOrientations["r_forefoot_tip"] = quatReader.GetQuat(8);
+
+		//w górê
+		newMotionState.jointsOrientations["vt1"] = quatReader.GetQuat(9);
+		// w lewo
+		newMotionState.jointsOrientations["l_shoulder"] = quatReader.GetQuat(10);
+		newMotionState.jointsOrientations["l_elbow"] = quatReader.GetQuat(11);
+		newMotionState.jointsOrientations["l_wrist"] = quatReader.GetQuat(12);
+		newMotionState.jointsOrientations["l_middle_distal_tip"] = quatReader.GetQuat(13);
+		//w prawo
+		newMotionState.jointsOrientations["r_shoulder"] = quatReader.GetQuat(14);
+		newMotionState.jointsOrientations["r_elbow"] = quatReader.GetQuat(15);
+		newMotionState.jointsOrientations["r_wrist"] = quatReader.GetQuat(16);
+		newMotionState.jointsOrientations["r_middle_distal_tip"] = quatReader.GetQuat(17);
+
+		//g³owa
+		newMotionState.jointsOrientations["skullbase"] = quatReader.GetQuat(18);
+		newMotionState.jointsOrientations["skull_tip"] = quatReader.GetQuat(19);
+#else // !ACCEPT_EXTERNAL_QUATS
+		//for (auto& keyVal : newMotionState.jointsOrientations)
+		//{
+		//	keyVal.second = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		//}
+#endif // ACCEPT_EXTERNAL_QUATS
+
 		return newMotionState;
 	}
 
@@ -572,7 +640,9 @@ bool PluginHelper::init()
 			ret = false;
 		}
 		else{			
-			imuDS->registerCostumeCalibrationAlgorithm(new DummyCalibrationAlgorithm);
+			// Register basic callibration algorithm
+			imuDS->registerCostumeCalibrationAlgorithm(new InertialCalibrationAlgorithm);
+
 			imuDS->registerMotionEstimationAlgorithm(new DummyMotionEstimationAlgorithm);
 			
 			// Register all orientation estimation algorithms
