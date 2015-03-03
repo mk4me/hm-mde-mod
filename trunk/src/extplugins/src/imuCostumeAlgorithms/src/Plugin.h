@@ -4,6 +4,7 @@
 
 class MotionDataObserver;
 
+//! Data aquisition plugin helper class
 class PluginHelper
 {
 	friend class MotionDataObserver;

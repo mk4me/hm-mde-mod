@@ -29,7 +29,7 @@
 	CQuatIO quatReader(false);
 #endif // ACCEPT_EXTERNAL_QUATS
 
-
+//! Basic callibration algorithm using gravity vector and magnetometer
 class InertialCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}");
@@ -51,10 +51,12 @@ public:
 	//! Returns max number (n) of steps that algorithm might require to calibrate costume, 0 means no upper limit
 	virtual unsigned int maxCalibrationSteps() const override { return 1; }
 
-	//! \param skeleton	Kalibrowany szkielet
-	//! \param mapping Mapowanie sensorów do szkieletu
-	//! \param sensorsAdjustment Wstêpne ustawienie sensorów - pozwala zadaæ stan pocz¹tkowy bardziej zbli¿ony do rzeczywistoœci
-	//! \param calibrationData Dane kalibracyjne
+	//! Calibration initialization method
+	/*!
+		\param skeleton	Kalibrowany szkielet
+		\param mapping Mapowanie sensorów do szkieletu
+		\param sensorsAdjustment Wstêpne ustawienie sensorów - pozwala zadaæ stan pocz¹tkowy bardziej zbli¿ony do rzeczywistoœci
+	*/
 	virtual void initialize(kinematic::SkeletonConstPtr skeleton, const IMU::SensorsMapping & mapping,
 		const SensorsAdjustemnts  & sensorsAdjustment = SensorsAdjustemnts()) override
 	{
@@ -119,6 +121,7 @@ private:
 	std::set<imuCostume::Costume::SensorID> _sensorCallibrated;
 };
 
+//! Naive motion estimation algorithm
 class DummyMotionEstimationAlgorithm : public IMU::IMUCostumeMotionEstimationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-1000000A563F}")
@@ -138,7 +141,12 @@ public:
 	//! Resets algo internal state
 	virtual void reset() override {}
 
-	//! \param skeleton	Kalibrowany szkielet
+	//! Initializes callibration algorithm
+	/*! 
+		\param skeleton	Callibrated skeleton
+		\param sensorsAdjustment rotational/translational adjustements for every IMU sensor in global frame of reference
+		\param sensorsMapping binding structure between IMU sensors' indices and skeleton segments
+	*/
 	virtual void initialize(kinematic::SkeletonConstPtr skeleton,
 		const IMU::IMUCostumeCalibrationAlgorithm::SensorsAdjustemnts & sensorsAdjustment,
 		const IMU::SensorsMapping & sensorsMapping) override
@@ -150,9 +158,10 @@ public:
 
 	//! Calculates orientation from sensor fusion
 	/*!
-	\param data Dane z IMU
-	\param inDeltaT Czas od poprzedniej ramki danych
-	\return Returns Lokalne orientacje wszystkich jointów, bez end-sitów
+		\param motionState wstêpnie wyestymowany szkielet
+		\param data dane pobrane w aktualnej klatce z IMU
+		\param inDeltaT Czas od poprzedniej ramki danych
+		\return Returns Lokalne orientacje wszystkich jointów, bez end-sitów
 	*/
 	virtual MotionState estimate(const MotionState & motionState,
 		const IMU::SensorsData & data, const double inDeltaT) override
@@ -330,6 +339,7 @@ public:
 		\param inGyro gyroscope vector from IMU
 		\param inMag magnetometer vector from IMU
 		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
+		\param orient raw quaternion from IMU
 		\return Returns estimated orientation.
 	*/
 	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
@@ -442,6 +452,7 @@ public:
 		\param inGyro gyroscope vector from IMU
 		\param inMag magnetometer vector from IMU
 		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
+		\param orient raw quaternion from IMU
 		\return Returns estimated orientation.
 	*/
 	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
@@ -518,11 +529,12 @@ public:
 
 	//! Calculates orientation from sensor fusion
 	/*!
-	\param inAcc accelerometer vector from IMU
-	\param inGyro gyroscope vector from IMU
-	\param inMag magnetometer vector from IMU
-	\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
-	\return Returns estimated orientation.
+		\param inAcc accelerometer vector from IMU
+		\param inGyro gyroscope vector from IMU
+		\param inMag magnetometer vector from IMU
+		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
+		\param orient raw quaternion from IMU
+		\return Returns estimated orientation.
 	*/
 	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
 		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
@@ -598,6 +610,7 @@ public:
 		\param inGyro gyroscope vector from IMU
 		\param inMag magnetometer vector from IMU
 		\param inDeltaT time between acquisitions in seconds [s] from IMU sensor
+		\param orient raw quaternion from IMU
 		\return Returns estimated orientation.
 	*/
 	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
@@ -634,6 +647,7 @@ core::Thread PluginHelper::streamQuerryingThread = core::Thread();
 IMU::CostumeSkeletonMotionConstPtr PluginHelper::skeletonMotion = IMU::CostumeSkeletonMotionConstPtr();
 utils::shared_ptr<threadingUtils::ResetableStreamStatusObserver> PluginHelper::streamObserver = utils::shared_ptr<threadingUtils::ResetableStreamStatusObserver>();
 
+//! Observer object for IMU data stream
 class MotionDataObserver : public core::IDataManagerReader::IObjectObserver
 {
 public:
@@ -661,6 +675,7 @@ public:
 	}
 };
 
+//! Helper function for defining skeleton
 kinematic::JointPtr createJoint(kinematic::JointPtr parent,
 	const std::string & name, const osg::Vec3 & position,
 	const osg::Quat & orientation = osg::Quat(0, 0, 0, 1))
@@ -678,11 +693,13 @@ kinematic::JointPtr createJoint(kinematic::JointPtr parent,
 	return ret;
 }
 
+//! Helper height normalization function
 osg::Vec3 norm(const osg::Vec3 & in)
 {
 	return in / 183.0;
 }
 
+//! Sample plugin initialization
 bool PluginHelper::init()
 {
 	bool ret = true;
@@ -752,6 +769,7 @@ bool PluginHelper::init()
 	return ret;
 }
 
+//! Sample plugin de-initialization
 void PluginHelper::deinit()
 {
 	finish = true;
@@ -776,6 +794,7 @@ void PluginHelper::deinit()
 	}
 }
 
+//! Main plugin function (worker thread)
 void PluginHelper::run()
 {
 	while (finish == false)
@@ -802,6 +821,7 @@ void PluginHelper::run()
 	}
 }
 
+//! Plugin definition macro
 CORE_EXT_PLUGIN_BEGIN("imuCostumeAlgorithms", core::UID::GenerateUniqueID("{3C0C0000-9351-46CC-A5FE-52AA182E1279}"), "en", \
 	PluginHelper::init, nullptr, PluginHelper::deinit, \
 	"vendorName", "vendorShortName", "vendorDescription", "vendorContact", \
