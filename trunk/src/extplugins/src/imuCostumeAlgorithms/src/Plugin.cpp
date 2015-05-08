@@ -13,11 +13,13 @@
 #include <boost/thread/mutex.hpp>
 
 #include "filter_lib\lib_main.h"
+#include "calibWidget.h"
 
 //#define FAKE_FILTER_OUTPUT // if defined, Q(XYZW) = matlab (1000), inst (0100), aqkf (0010), hw (0001)
 //#define OUTPUT_MATLAB_TO_OSG // if defined, matlab filter starts to send data to an external visualizer
 //#define ACCEPT_EXTERNAL_QUATS // if defined, motion estimator will accept external quaternions
 #define OVERRIDE_CALIBRATION // if defined, raw quatenrions will be passed
+#define NORTH_FIX // if defined, new north detection (and automatic fix) is enabled
 
 #ifdef OUTPUT_MATLAB_TO_OSG
 	#include "CQuatIO.h" // For external visualization only
@@ -35,7 +37,9 @@ class InertialCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}");
 
 public:
+	//! Simple constructor
 	InertialCalibrationAlgorithm() {}
+
 	virtual ~InertialCalibrationAlgorithm(){}
 
 	//! \return Nowy algorytm kalibracji
@@ -114,7 +118,6 @@ public:
 	{
 		return sa;
 	}
-
 private:
 
 	SensorsAdjustemnts sa;
@@ -127,7 +130,13 @@ class DummyMotionEstimationAlgorithm : public IMU::IMUCostumeMotionEstimationAlg
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-1000000A563F}")
 
 public:
-	DummyMotionEstimationAlgorithm() {}
+	//! Simple initialization
+	DummyMotionEstimationAlgorithm() 
+	{
+		// Initialize local timer
+		_lastTick = boost::posix_time::microsec_clock::local_time();
+	}
+	
 	//! Destruktor wirtualny
 	virtual ~DummyMotionEstimationAlgorithm() {}
 
@@ -216,8 +225,19 @@ public:
 			_dataCache[keyVal.first] = keyVal.second.orientation;
 		}
 
+#ifdef NORTH_FIX 
+		int intAccTime = (int)accTime;
+		//osg::Quat testRotation = osg::Quat((intAccTime % 90) / 180.0 * 3.14159, osg::Vec3d(0.0, 0.0, 1.0));
+		osg::Quat xRot = osg::Quat(osg::PI_4, osg::Vec3d(1.0, 0.0, 0.0));
+		osg::Quat zRot = osg::Quat(osg::PI_2, osg::Vec3d(0.0, 0.0, 1.0));
 
+		// xRot * zRot - global ref frame rotated by 90 deg around z, next rotation is around global y (local x)
+		osg::Quat testRotation = zRot * xRot;
+
+		newMotionState.jointsOrientations["HumanoidRoot"] = /*testRotation **/ _dataCache[8];//_dataCache[0];
+#else
 		newMotionState.jointsOrientations["HumanoidRoot"] = _dataCache[8];//_dataCache[0];
+#endif
 
 		//koncowy odcinek(lydka) swiruje, nogi sa zamienione a indeksy sie zgadzaja
 
@@ -566,16 +586,68 @@ private:
 	//! Nasty hack
 	osg::Quat _calibQuat;
 	bool _callibrated;
+	unsigned int _sensorID;
+
+	static CalibWidget* _myQTWindow;
+	static unsigned int _currSensorID;
+	static bool _inCalibOrientation; // Are we facing West?
+
+	//! Calculates magic fix angle
+	double CalcFixAngle(const osg::Vec3d& inAcc, const osg::Vec3d& inMag)
+	{
+		osg::Vec3d corrMag(inMag.x(), inMag.y(), inMag.z());
+		corrMag.normalize();
+
+		osg::Vec3d accVec(inAcc.x(), inAcc.y(), inAcc.z());
+		accVec.normalize();
+
+		osg::Vec3d crossMagAcc = corrMag ^ accVec;
+		crossMagAcc.normalize();
+
+		//printf("MAGACCCROSS =[X: %.2f, Y: %.2f, Z: %.2f]\n", (float)crossMagAcc.x(), (float)crossMagAcc.y(), (float)crossMagAcc.z());
+		double fixAngle = acos(crossMagAcc * osg::Vec3d(0.0, 1.0, 0.0)) * 180.0 / osg::PI;
+		//printf("FIX angle = %.2f\n", fixAngle);
+		return fixAngle;
+	}
+
+	//! Spawns Qt window if non existant
+	void SpawnQtWindow()
+	{
+		// If does not exist
+		if (!_myQTWindow)
+		{
+			_myQTWindow = new CalibWidget();
+			_myQTWindow->setVisible(true);
+			_myQTWindow->setAttribute(Qt::WA_DeleteOnClose);
+			_myQTWindow->setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::WindowStaysOnTopHint | Qt::CustomizeWindowHint);
+			_myQTWindow->show();
+		}
+	}
+
+	//! Despawn Qt window
+	void DeSpawnQtWindow()
+	{
+		// Static field
+		if (_myQTWindow)
+		{
+			//_myQTWindow->close();
+			//delete _myQTWindow;
+			//_myQTWindow->hide();
+			//_myQTWindow->setVisible(false);
+			//_myQTWindow = NULL;
+		}
+	}
 
 public:
 	//! Simple constructor
-	HardwareKalmanEstimationAlgorithm() : _callibrated (false)
+	HardwareKalmanEstimationAlgorithm() : _callibrated(false), _sensorID(_currSensorID++) // Post increment - Set next id
 	{
 	}
 
 	//! Make it polymorphic
 	virtual ~HardwareKalmanEstimationAlgorithm()
 	{
+		//DeSpawnQtWindow(); // TODO: diff thread error
 	}
 
 	//! Returns the actual implementation
@@ -616,6 +688,32 @@ public:
 	virtual osg::Quat estimate(const osg::Vec3d& inAcc, const osg::Vec3d& inGyro,
 		const osg::Vec3d& inMag, const double inDeltaT, const osg::Quat & orient) override
 	{
+		// This is root and we dont have calib orientation
+		if ((_sensorID == (8 + 1)) && !_inCalibOrientation)
+		{
+			// Spawn Qt Window if needed
+			SpawnQtWindow();
+
+			// Set callib string
+			double fixAngle = CalcFixAngle(inAcc, inMag);
+			QString stringToSet = QString::number(fixAngle, 'f', 1);
+			_myQTWindow->calibText->setText(stringToSet);
+
+			// Once we get into right position
+			if (fixAngle < 3.0)
+			{
+				_inCalibOrientation = true;
+				DeSpawnQtWindow();
+				//QApplication::beep();
+				//boost::this_thread::sleep(boost::posix_time::seconds(2));
+				return osg::Quat(0.0, 0.0, 0.0, 1.0);
+			}
+		}
+
+		// Not callibrated and in the wrong calibration pose - return
+		if (!_inCalibOrientation && !_callibrated)
+			return osg::Quat(0.0, 0.0, 0.0, 1.0);
+
 		// TODO: remove me
 		// should be R IJK, getting IJK R
 		osg::Quat superOrient(orient.y(), orient.z(), orient.w(), orient.x());
@@ -624,6 +722,20 @@ public:
 		if (!_callibrated)
 		{
 			_calibQuat = superOrient.inverse();
+
+#ifdef NORTH_FIX
+			//osg::Quat origQ = osg::Quat(q_orig.i, q_orig.j, q_orig.k, q_orig.r);
+			//osg::Vec3d magVec = osg::Vec3d(data.mag_x, data.mag_y, data.mag_z);
+			//magVec.normalize();
+			//osg::Vec3d newMagVec = origQ.inverse() * magVec;
+			
+			osg::Vec3d normMag = inMag;
+			normMag.normalize();
+			osg::Vec3d magInGlobalSpace = superOrient.inverse() * normMag;
+			double sum = magInGlobalSpace.x() + magInGlobalSpace.y() + magInGlobalSpace.z();
+			// In my house: N is (X: 0.38, Y: 0.1, Z: -0,92) - orientation independent in global ref frame, which is logical
+#endif
+
 			_callibrated = true;
 		}
 
@@ -638,6 +750,11 @@ public:
 #endif // FAKE_FILTER_OUTPUT
 	}
 };
+
+// Temp
+CalibWidget* HardwareKalmanEstimationAlgorithm::_myQTWindow = NULL;
+unsigned int HardwareKalmanEstimationAlgorithm::_currSensorID = 0;
+bool HardwareKalmanEstimationAlgorithm::_inCalibOrientation = true;
 
 // Helper ID for Matlab Dumper Estimation Algorithm
 unsigned int MatlabDumpEstimationAlgorithm::_IntID = 0;
