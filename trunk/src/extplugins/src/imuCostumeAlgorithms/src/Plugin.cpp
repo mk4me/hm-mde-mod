@@ -133,6 +133,8 @@ public:
 	{
 		// Initialize local timer
 		_lastTick = boost::posix_time::microsec_clock::local_time();
+		for (int i = 0; i < 20; ++i)
+			_dataCache[i] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 	}
 	
 	//! Destruktor wirtualny
@@ -221,9 +223,6 @@ public:
 		{
 			_dataCache[keyVal.first] = keyVal.second.orientation;
 		}
-		// Hacking the hack
-		if (_dataCache.size() < 11)
-			return newMotionState;
 
 #ifdef NORTH_FIX 
 		int intAccTime = (int)accTime;
@@ -245,13 +244,13 @@ public:
 		newMotionState.orientations[nodesMapping.right.at("r_hip")] = _dataCache[6] * _dataCache[8].inverse(); // do roota 
 		newMotionState.orientations[nodesMapping.right.at("r_knee")] = _dataCache[10] * _dataCache[6].inverse(); // do biodra
 		newMotionState.orientations[nodesMapping.right.at("l_ankle")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		newMotionState.orientations[nodesMapping.right.at("l_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		//newMotionState.orientations[nodesMapping.right.at("l_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 
 		////prawa noga (zamieniona z praw¹)
 		newMotionState.orientations[nodesMapping.right.at("l_hip")] = _dataCache[7] * _dataCache[8].inverse(); // do roota
 		newMotionState.orientations[nodesMapping.right.at("l_knee")] = _dataCache[9] * _dataCache[7].inverse(); // do biodra
 		newMotionState.orientations[nodesMapping.right.at("r_ankle")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		newMotionState.orientations[nodesMapping.right.at("r_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		//newMotionState.orientations[nodesMapping.right.at("r_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 
 		////w górê
 		newMotionState.orientations[nodesMapping.right.at("vt1")] = _dataCache[4] * _dataCache[8].inverse(); //osg::Quat(0.0, 0.0, 0.0, 1.0);
@@ -260,16 +259,16 @@ public:
 		newMotionState.orientations[nodesMapping.right.at("r_shoulder")] = _dataCache[0] * _dataCache[4].inverse(); // do pleców
 		newMotionState.orientations[nodesMapping.right.at("r_elbow")] = _dataCache[3] * _dataCache[0].inverse(); // do ramienia
 		newMotionState.orientations[nodesMapping.right.at("l_wrist")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		newMotionState.orientations[nodesMapping.right.at("l_middle_distal_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		//newMotionState.orientations[nodesMapping.right.at("l_middle_distal_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 		////w prawo (zamieniona z praw¹)
 		newMotionState.orientations[nodesMapping.right.at("l_shoulder")] = _dataCache[5] * _dataCache[4].inverse(); // do pleców
 		newMotionState.orientations[nodesMapping.right.at("l_elbow")] = _dataCache[11] * _dataCache[5].inverse(); // do ramienia
 		newMotionState.orientations[nodesMapping.right.at("r_wrist")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		newMotionState.orientations[nodesMapping.right.at("r_middle_distal_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		//newMotionState.orientations[nodesMapping.right.at("r_middle_distal_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 
 		////g³owa
 		newMotionState.orientations[nodesMapping.right.at("skullbase")] = _dataCache[2] * _dataCache[4].inverse(); // do pleców
-		newMotionState.orientations[nodesMapping.right.at("skull_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		//newMotionState.orientations[nodesMapping.right.at("skull_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 #endif // ACCEPT_EXTERNAL_QUATS
 
 		return newMotionState;
