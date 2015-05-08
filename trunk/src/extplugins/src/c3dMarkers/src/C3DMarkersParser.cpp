@@ -41,7 +41,7 @@ void C3DMarkersParser::parse( const std::string & source )
 		
 	int markersCount = parser->getNumPoints();
 	for (int i = 0; i < markersCount; i++) {
-	    MarkerChannelPtr ptr(new MarkerChannel(*parser, i)); 
+		c3dlib::MarkerChannelPtr ptr(new c3dlib::MarkerChannel(*parser, i));
 	    markers->addChannel(ptr);						 
 	}
 	allmarkerCollection->set(markers);

@@ -50,7 +50,7 @@ public:
 	virtual std::string name() const override { return "Inertial callibration algorithm"; }
 
 	//! Resets algo internal state
-	virtual void reset() override { SensorsAdjustemnts().swap(sa); }
+	virtual void reset() override { SensorsDescriptions().swap(sa); }
 
 	//! Returns max number (n) of steps that algorithm might require to calibrate costume, 0 means no upper limit
 	virtual unsigned int maxCalibrationSteps() const override { return 1; }
@@ -61,19 +61,10 @@ public:
 		\param mapping Mapowanie sensorów do szkieletu
 		\param sensorsAdjustment Wstêpne ustawienie sensorów - pozwala zadaæ stan pocz¹tkowy bardziej zbli¿ony do rzeczywistoœci
 	*/
-	virtual void initialize(kinematic::SkeletonConstPtr skeleton, const IMU::SensorsMapping & mapping,
-		const SensorsAdjustemnts  & sensorsAdjustment = SensorsAdjustemnts()) override
+	virtual void initialize(kinematic::SkeletonConstPtr skeleton,
+		const SensorsDescriptions & sensorsDescription) override
 	{
-		sa = sensorsAdjustment;
-		if (sa.empty() == true){
-			for (const auto & m : mapping)
-			{
-				SensorAdjustment s;
-				s.offset = osg::Vec3d(0, 0, 0);
-				s.rotation = osg::Quat(0, 0, 0, 1);
-				sa.insert(SensorsAdjustemnts::value_type(m.get_left(), s));
-			}
-		}
+		sa = sensorsDescription;
 	}
 
 	//! Calculates orientation from sensor fusion
@@ -116,11 +107,18 @@ public:
 	//! \return Dane kalibracyjne szkieletu, poprawki dla sensorów
 	virtual SensorsAdjustemnts sensorsAdjustemnts() const override
 	{
-		return sa;
+		SensorsAdjustemnts ret;
+
+		for (const auto & sd : sa)
+		{
+			ret.insert(SensorsAdjustemnts::value_type(sd.first, sd.second));
+		}
+
+		return ret;
 	}
 private:
 
-	SensorsAdjustemnts sa;
+	SensorsDescriptions sa;
 	std::set<imuCostume::Costume::SensorID> _sensorCallibrated;
 };
 
@@ -157,12 +155,11 @@ public:
 		\param sensorsMapping binding structure between IMU sensors' indices and skeleton segments
 	*/
 	virtual void initialize(kinematic::SkeletonConstPtr skeleton,
-		const IMU::IMUCostumeCalibrationAlgorithm::SensorsAdjustemnts & sensorsAdjustment,
-		const IMU::SensorsMapping & sensorsMapping) override
+		const IMU::IMUCostumeCalibrationAlgorithm::SensorsDescriptions & sensorsDescription) override
 	{
-		this->skeleton = skeleton;
-		this->sensorsAdjustment = sensorsAdjustment;
-		this->sensorsMapping = sensorsMapping;
+		this->skeleton = skeleton;		
+		this->sensorsMapping = sensorsDescription;
+		this->nodesMapping = kinematic::LinearizedSkeleton::Visitor::createNonLeafMappingKey(*skeleton, [](const kinematic::Skeleton::JointData & jointData) { return jointData.name(); });
 	}
 
 	//! Calculates orientation from sensor fusion
@@ -172,11 +169,11 @@ public:
 		\param inDeltaT Czas od poprzedniej ramki danych
 		\return Returns Lokalne orientacje wszystkich jointów, bez end-sitów
 	*/
-	virtual MotionState estimate(const MotionState & motionState,
+	virtual kinematic::SkeletonState::RigidCompleteStateLocal estimate(const kinematic::SkeletonState::RigidCompleteStateLocal & motionState,
 		const IMU::SensorsData & data, const double inDeltaT) override
 	{
 		static double accTime = 0.0;
-		
+
 		boost::posix_time::ptime nowTick = boost::posix_time::microsec_clock::local_time();
 		boost::posix_time::time_duration elapsedMicroSec = nowTick - _lastTick;
 		_lastTick = nowTick;
@@ -184,7 +181,7 @@ public:
 
 		accTime += myTime;
 
-		MotionState newMotionState = motionState;
+		auto newMotionState = motionState;
 
 #ifdef ACCEPT_EXTERNAL_QUATS
 		newMotionState.jointsOrientations["HumanoidRoot"] = quatReader.GetQuat(0);
@@ -234,53 +231,54 @@ public:
 		// xRot * zRot - global ref frame rotated by 90 deg around z, next rotation is around global y (local x)
 		osg::Quat testRotation = zRot * xRot;
 
-		newMotionState.jointsOrientations["HumanoidRoot"] = /*testRotation **/ _dataCache[8];//_dataCache[0];
+		newMotionState.orientations[0] = /*testRotation **/ _dataCache[8];//_dataCache[0];
 #else
-		newMotionState.jointsOrientations["HumanoidRoot"] = _dataCache[8];//_dataCache[0];
+		newMotionState.orientations[0] = _dataCache[8];//_dataCache[0];
 #endif
 
 		//koncowy odcinek(lydka) swiruje, nogi sa zamienione a indeksy sie zgadzaja
 
 		////lewa noga (zamieniona z praw¹)
-		newMotionState.jointsOrientations["r_hip"] =  _dataCache[6] * _dataCache[8].inverse(); // do roota 
-		newMotionState.jointsOrientations["r_knee"] = _dataCache[10] * _dataCache[6].inverse(); // do biodra
-		newMotionState.jointsOrientations["l_ankle"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		newMotionState.jointsOrientations["l_forefoot_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("r_hip")] = _dataCache[6] * _dataCache[8].inverse(); // do roota 
+		newMotionState.orientations[nodesMapping.right.at("r_knee")] = _dataCache[10] * _dataCache[6].inverse(); // do biodra
+		newMotionState.orientations[nodesMapping.right.at("l_ankle")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("l_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 
 		////prawa noga (zamieniona z praw¹)
-		newMotionState.jointsOrientations["l_hip"] = _dataCache[7] * _dataCache[8].inverse(); // do roota
-		newMotionState.jointsOrientations["l_knee"] = _dataCache[9] * _dataCache[7].inverse(); // do biodra
-		newMotionState.jointsOrientations["r_ankle"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		newMotionState.jointsOrientations["r_forefoot_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("l_hip")] = _dataCache[7] * _dataCache[8].inverse(); // do roota
+		newMotionState.orientations[nodesMapping.right.at("l_knee")] = _dataCache[9] * _dataCache[7].inverse(); // do biodra
+		newMotionState.orientations[nodesMapping.right.at("r_ankle")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("r_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 
 		////w górê
-		newMotionState.jointsOrientations["vt1"] = _dataCache[4] * _dataCache[8].inverse(); //osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("vt1")] = _dataCache[4] * _dataCache[8].inverse(); //osg::Quat(0.0, 0.0, 0.0, 1.0);
 		
 		//// w lewo (zamieniona z praw¹)
-		newMotionState.jointsOrientations["r_shoulder"] = _dataCache[0] * _dataCache[4].inverse(); // do pleców
-		newMotionState.jointsOrientations["r_elbow"] = _dataCache[3] * _dataCache[0].inverse(); // do ramienia
-		newMotionState.jointsOrientations["l_wrist"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		newMotionState.jointsOrientations["l_middle_distal_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("r_shoulder")] = _dataCache[0] * _dataCache[4].inverse(); // do pleców
+		newMotionState.orientations[nodesMapping.right.at("r_elbow")] = _dataCache[3] * _dataCache[0].inverse(); // do ramienia
+		newMotionState.orientations[nodesMapping.right.at("l_wrist")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("l_middle_distal_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 		////w prawo (zamieniona z praw¹)
-		newMotionState.jointsOrientations["l_shoulder"] = _dataCache[5] * _dataCache[4].inverse(); // do pleców
-		newMotionState.jointsOrientations["l_elbow"] = _dataCache[11] * _dataCache[5].inverse(); // do ramienia
-		newMotionState.jointsOrientations["r_wrist"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
-		newMotionState.jointsOrientations["r_middle_distal_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("l_shoulder")] = _dataCache[5] * _dataCache[4].inverse(); // do pleców
+		newMotionState.orientations[nodesMapping.right.at("l_elbow")] = _dataCache[11] * _dataCache[5].inverse(); // do ramienia
+		newMotionState.orientations[nodesMapping.right.at("r_wrist")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("r_middle_distal_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 
 		////g³owa
-		newMotionState.jointsOrientations["skullbase"] = _dataCache[2] * _dataCache[4].inverse(); // do pleców
-		newMotionState.jointsOrientations["skull_tip"] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.orientations[nodesMapping.right.at("skullbase")] = _dataCache[2] * _dataCache[4].inverse(); // do pleców
+		newMotionState.orientations[nodesMapping.right.at("skull_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 #endif // ACCEPT_EXTERNAL_QUATS
 
 		return newMotionState;
 	}
 
 private:
-	kinematic::SkeletonConstPtr skeleton;
-	IMU::IMUCostumeCalibrationAlgorithm::SensorsAdjustemnts sensorsAdjustment;
-	IMU::SensorsMapping sensorsMapping;
+
+	kinematic::SkeletonConstPtr skeleton;	
+	IMU::IMUCostumeCalibrationAlgorithm::SensorsDescriptions sensorsMapping;
 	boost::posix_time::ptime _lastTick;
 	std::map<imuCostume::Costume::SensorID, osg::Quat> _dataCache;
+	utils::LinearizedTree::Mapping<std::string> nodesMapping;
 };
 
 //! Matlab dumper (fake filter) - generates orientation as a quaternion using IMU sensor fusion
@@ -793,18 +791,13 @@ public:
 };
 
 //! Helper function for defining skeleton
-kinematic::JointPtr createJoint(kinematic::JointPtr parent,
+kinematic::Skeleton::JointPtr createJoint(kinematic::Skeleton::JointPtr parent,
 	const std::string & name, const osg::Vec3 & position,
 	const osg::Quat & orientation = osg::Quat(0, 0, 0, 1))
 {
-	kinematic::JointData jd;
-	jd.name = name;
-	jd.orientation = orientation;
-	jd.position = position;
-
-	auto ret = kinematic::Joint::create(jd);	
+	auto ret = kinematic::Skeleton::Joint::create({ name, position, orientation });
 	if (parent != nullptr){
-		parent->children.push_back(ret);
+		kinematic::Skeleton::Joint::add(parent, ret);
 	}
 
 	return ret;
@@ -829,35 +822,34 @@ bool PluginHelper::init()
 		}
 		else{			
 			// Register basic callibration algorithm
-			imuDS->registerCostumeCalibrationAlgorithm(new InertialCalibrationAlgorithm);
+			imuDS->registerCostumeCalibrationAlgorithm(IMU::IMUCostumeCalibrationAlgorithmPtr(new InertialCalibrationAlgorithm));
 
-			imuDS->registerMotionEstimationAlgorithm(new DummyMotionEstimationAlgorithm);
+			imuDS->registerMotionEstimationAlgorithm(IMU::IMUCostumeMotionEstimationAlgorithmPtr(new DummyMotionEstimationAlgorithm));
 			
 			// Register all orientation estimation algorithms
-			imuDS->registerOrientationEstimationAlgorithm(new MatlabDumpEstimationAlgorithm);
-			imuDS->registerOrientationEstimationAlgorithm(new InstantenousKalmanEstimationAlgorithm);
-			imuDS->registerOrientationEstimationAlgorithm(new AQKfKalmanEstimationAlgorithm);
-			imuDS->registerOrientationEstimationAlgorithm(new HardwareKalmanEstimationAlgorithm);
+			imuDS->registerOrientationEstimationAlgorithm(IMU::IIMUOrientationEstimationAlgorithmPtr(new MatlabDumpEstimationAlgorithm));
+			imuDS->registerOrientationEstimationAlgorithm(IMU::IIMUOrientationEstimationAlgorithmPtr(new InstantenousKalmanEstimationAlgorithm));
+			imuDS->registerOrientationEstimationAlgorithm(IMU::IIMUOrientationEstimationAlgorithmPtr(new AQKfKalmanEstimationAlgorithm));
+			imuDS->registerOrientationEstimationAlgorithm(IMU::IIMUOrientationEstimationAlgorithmPtr(new HardwareKalmanEstimationAlgorithm));
 
 			//szkielet
-			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>();
-			dummySkeleton->name = "DummySkeleton";
-			dummySkeleton->root = createJoint(kinematic::JointPtr(), "HumanoidRoot", norm(osg::Vec3(0, 0, 0)));
+			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>(createJoint(kinematic::Skeleton::JointPtr(), "HumanoidRoot", norm(osg::Vec3(0, 0, 0))));
+			//dummySkeleton->name = "DummySkeleton";
 
 			//lewa noga
-			auto j = createJoint(dummySkeleton->root, "l_hip", norm(osg::Vec3(16, 0, 0)));
+			auto j = createJoint(dummySkeleton->root(), "l_hip", norm(osg::Vec3(16, 0, 0)));
 			j = createJoint(j, "l_knee", norm(osg::Vec3(0, 0, -50)));
 			j = createJoint(j, "l_ankle", norm(osg::Vec3(0, 0, -45)));
 			j = createJoint(j, "l_forefoot_tip", norm(osg::Vec3(0, 26.5, 0)));
 
 			//prawa noga
-			j = createJoint(dummySkeleton->root, "r_hip", norm(osg::Vec3(-16, 0, 0)));
+			j = createJoint(dummySkeleton->root(), "r_hip", norm(osg::Vec3(-16, 0, 0)));
 			j = createJoint(j, "r_knee", norm(osg::Vec3(0, 0, -50)));
 			j = createJoint(j, "r_ankle", norm(osg::Vec3(0, 0, -45)));
 			j = createJoint(j, "r_forefoot_tip", norm(osg::Vec3(0, 26.5, 0)));
 
 			//w górê
-			auto vt = createJoint(dummySkeleton->root, "vt1", norm(osg::Vec3(0, 0, 50)));
+			auto vt = createJoint(dummySkeleton->root(), "vt1", norm(osg::Vec3(0, 0, 50)));
 			// w lewo
 			j = createJoint(vt, "l_shoulder", norm(osg::Vec3(23.5, 0, 0)));
 			j = createJoint(j, "l_elbow", norm(osg::Vec3(0, 0, -30)));
@@ -873,7 +865,7 @@ bool PluginHelper::init()
 			j = createJoint(vt, "skullbase", norm(osg::Vec3(0, 0, 15)));
 			j = createJoint(j, "skull_tip", norm(osg::Vec3(0, 0, 23)));
 
-			imuDS->registerSkeletonModel(utils::make_shared<IMU::Skeleton>(core::UID::GenerateUniqueID("{D7801231-BACA-42C6-9A8E-2000000A563F}"), *dummySkeleton));
+			imuDS->registerSkeletonModel(utils::make_shared<IMU::Skeleton>(core::UID::GenerateUniqueID("{D7801231-BACA-42C6-9A8E-2000000A563F}"), "DummySkeleton", *dummySkeleton));
 		}
 
 		//objectObserver.reset(new MotionDataObserver);
@@ -924,9 +916,9 @@ void PluginHelper::run()
 
 			//TODO - robimy coœ z danymi
 			//ms.jointsOrientations
-			if (ms.second.jointsOrientations.size() > 0)
+			if (ms.second.orientations.empty() == false)
 			{
-				osg::Quat superQuat = ms.second.jointsOrientations["HumanoidRoot"];
+				osg::Quat superQuat = ms.second.orientations[0];
 
 			}
 

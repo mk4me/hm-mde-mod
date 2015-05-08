@@ -12,17 +12,17 @@ ExampleScalarChannelProcessor::ExampleScalarChannelProcessor(double scale) : sca
 
 void ExampleScalarChannelProcessor::process()
 {
-	ScalarChannelReaderInterfaceConstPtr inScalarData = inPinA->getValue();
+	c3dlib::ScalarChannelReaderInterfaceConstPtr inScalarData = inPinA->getValue();
 	        
 	//kopiuje go - przygotowuje sobie porcje danych wyjsciowych
-	ScalarChannelPtr outScalarData(new ScalarChannel(inScalarData->getSamplesPerSecond()));
+	c3dlib::ScalarChannelPtr outScalarData(new c3dlib::ScalarChannel(inScalarData->getSamplesPerSecond()));
 	outScalarData->setName("Result channel");
 	outScalarData->setTimeBaseUnit(inScalarData->getTimeBaseUnit());
 	outScalarData->setValueBaseUnit(inScalarData->getValueBaseUnit());
 	
 	//modyfikuje dane ktore bêdê zaraz udostepnia³ na wyjœciu
 	//for(auto it = inScalarData->begin(); it != inScalarData->end(); it++){
-	for(ScalarChannel::size_type i = 0; i < inScalarData->size(); ++i){
+	for (c3dlib::ScalarChannel::size_type i = 0; i < inScalarData->size(); ++i){
 	    //skalowanie
 		outScalarData->addPoint( inScalarData->value(i) * scale);
 	}

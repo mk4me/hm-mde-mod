@@ -20,7 +20,7 @@
 #include <c3dlib/C3DParser.h>
 #include <utils/PtrPolicyStd.h>
 
-class AllMarkersCollection : public MarkerCollection
+class AllMarkersCollection : public c3dlib::MarkerCollection
 {};
 typedef boost::shared_ptr<AllMarkersCollection> AllMarkersCollectionPtr;
 typedef boost::shared_ptr<const AllMarkersCollection> AllMarkersCollectionConstPtr;

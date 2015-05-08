@@ -13,6 +13,7 @@
 #include <exampleWorkflowPlugin/exampleIntStatistics.h>
 #include <plugins/newVdf/IDataFlowProvider.h>
 #include <utils/PtrPolicyStd.h>
+#include <utils/ClonePolicies.h>
 #include <vector>
 
 typedef std::vector<int> Ints;

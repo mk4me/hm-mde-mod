@@ -28,7 +28,7 @@ namespace acc = boost::accumulators;
 template<class T>
 class ExampleStatistics
 {
-    UTILS_STATIC_ASSERT((boost::is_arithmetic<T>::value), "Template class must be arithmetic type! For custom types propose custom statistic class");
+    static_assert((boost::is_arithmetic<T>::value), "Template class must be arithmetic type! For custom types propose custom statistic class");
 
 public:
     ExampleStatistics()
