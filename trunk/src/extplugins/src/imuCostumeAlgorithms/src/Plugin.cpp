@@ -221,6 +221,9 @@ public:
 		{
 			_dataCache[keyVal.first] = keyVal.second.orientation;
 		}
+		// Hacking the hack
+		if (_dataCache.size() < 11)
+			return newMotionState;
 
 #ifdef NORTH_FIX 
 		int intAccTime = (int)accTime;
