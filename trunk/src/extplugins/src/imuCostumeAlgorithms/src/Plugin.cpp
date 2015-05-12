@@ -232,13 +232,15 @@ public:
 		}*/
 
 #ifdef NORTH_FIX 
-		int intAccTime = (int)accTime;
-		//osg::Quat testRotation = osg::Quat((intAccTime % 90) / 180.0 * 3.14159, osg::Vec3d(0.0, 0.0, 1.0));
-		osg::Quat xRot = osg::Quat(osg::PI_4, osg::Vec3d(1.0, 0.0, 0.0));
-		osg::Quat zRot = osg::Quat(osg::PI_2, osg::Vec3d(0.0, 0.0, 1.0));
+		//int intAccTime = (int)accTime;
+		//osg::Quat testRotation = osg::Quat(accTime, osg::Vec3d(0.0, 1.0, 0.0));
+		//osg::Quat testRotation = quatReader.GetQuat(8);
+
+		//osg::Quat xRot = osg::Quat(osg::PI_4, osg::Vec3d(1.0, 0.0, 0.0));
+		//osg::Quat zRot = osg::Quat(osg::PI_2, osg::Vec3d(0.0, 0.0, 1.0));
 
 		// xRot * zRot - global ref frame rotated by 90 deg around z, next rotation is around global y (local x)
-		osg::Quat testRotation = zRot * xRot;
+		//osg::Quat testRotation = zRot * xRot;
 
 		newMotionState.orientations[0] = /*testRotation **/ _dataCache[8];//_dataCache[0];
 #else
@@ -723,7 +725,8 @@ public:
 
 		// TODO: remove me
 		// should be R IJK, getting IJK R
-		osg::Quat superOrient(orient.y(), orient.z(), orient.w(), orient.x());
+		//osg::Quat superOrient(orient.y(), orient.z(), orient.w(), orient.x());
+		osg::Quat superOrient = orient;
 
 		// Not callibrated?
 		if (!_callibrated)
