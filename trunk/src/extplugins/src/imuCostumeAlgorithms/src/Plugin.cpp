@@ -563,13 +563,15 @@ public:
 		// Not callibrated?
 		if (!_callibrated)
 		{
-			_calibQuat = orient.inverse();
+			// My orientation becomes a reference (we have orientation corresponding 
+			// to accelerometer and magnetometer in global coordinate frame)
+			_calibQuat = orient;
 			_callibrated = true;
 		}
 
-		osg::Quat gE = orient * _calibQuat;
-		gE = gE.inverse();
-		return gE; // Align my global orientation frame with osg global orientation frame
+		// Requires actor to face (W)est - (N)orth will be on the right side (rotation around global X axis)
+		return _calibQuat * orient.inverse(); 
+
 #else // STATIC_TOPOLOGY
 		// Not implemented. //
 		return osg::Quat(0.0, 0.0, 0.0, 1.0);
