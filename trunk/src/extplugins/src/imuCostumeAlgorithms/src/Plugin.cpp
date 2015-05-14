@@ -94,7 +94,14 @@ public:
 	//! \return Widget kalibracyjny (informacje o aktualnym stanie kalibracji, instrukcje dla usera)
 	virtual QWidget* calibrationWidget() 
 	{ 
-		return new CalibWidget(&_bindPoseSet, &_bowPoseSet);
+		QWidget* retQ = new CalibWidget(&_bindPoseSet, &_bowPoseSet);
+		if (retQ)
+		{
+			retQ->setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::WindowStaysOnTopHint | Qt::CustomizeWindowHint);
+			retQ->setVisible(true);
+			retQ->show();
+		}
+		return retQ;
 	}
 
 	//! \return Dane kalibracyjne szkieletu, poprawki dla sensorów
