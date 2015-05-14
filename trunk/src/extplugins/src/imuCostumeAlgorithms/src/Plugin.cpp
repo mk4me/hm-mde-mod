@@ -182,38 +182,38 @@ public:
 		}
 
 		// Set root (always 0 index)
-		newMotionState.orientations[0] = _dataCache[8];
+		newMotionState.data().orientations[0] = _dataCache[8];
 		
 		//koncowy odcinek(lydka) swiruje, nogi sa zamienione a indeksy sie zgadzaja
 
 		////lewa noga (zamieniona z praw¹)
-		newMotionState.orientations[nodesMapping.right.at("r_hip")] = _dataCache[6] * _dataCache[8].inverse(); // do roota 
-		newMotionState.orientations[nodesMapping.right.at("r_knee")] = _dataCache[10] * _dataCache[6].inverse(); // do biodra
-		newMotionState.orientations[nodesMapping.right.at("l_ankle")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.data().orientations[nodesMapping.right.at("r_hip")] = _dataCache[6] * _dataCache[8].inverse(); // do roota 
+		newMotionState.data().orientations[nodesMapping.right.at("r_knee")] = _dataCache[10] * _dataCache[6].inverse(); // do biodra
+		newMotionState.data().orientations[nodesMapping.right.at("l_ankle")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 		////newMotionState.orientations[nodesMapping.right.at("l_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 
 		//////prawa noga (zamieniona z praw¹)
-		newMotionState.orientations[nodesMapping.right.at("l_hip")] = _dataCache[7] * _dataCache[8].inverse(); // do roota
-		newMotionState.orientations[nodesMapping.right.at("l_knee")] = _dataCache[9] * _dataCache[7].inverse(); // do biodra
-		newMotionState.orientations[nodesMapping.right.at("r_ankle")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.data().orientations[nodesMapping.right.at("l_hip")] = _dataCache[7] * _dataCache[8].inverse(); // do roota
+		newMotionState.data().orientations[nodesMapping.right.at("l_knee")] = _dataCache[9] * _dataCache[7].inverse(); // do biodra
+		newMotionState.data().orientations[nodesMapping.right.at("r_ankle")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 		////newMotionState.orientations[nodesMapping.right.at("r_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 
 		//////w górê
-		newMotionState.orientations[nodesMapping.right.at("vt1")] = _dataCache[4] * _dataCache[8].inverse(); //osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.data().orientations[nodesMapping.right.at("vt1")] = _dataCache[4] * _dataCache[8].inverse(); //osg::Quat(0.0, 0.0, 0.0, 1.0);
 		//
 		////// w lewo (zamieniona z praw¹)
-		newMotionState.orientations[nodesMapping.right.at("r_shoulder")] = _dataCache[0] * _dataCache[4].inverse(); // do pleców
-		newMotionState.orientations[nodesMapping.right.at("r_elbow")] = _dataCache[3] * _dataCache[0].inverse(); // do ramienia
-		newMotionState.orientations[nodesMapping.right.at("l_wrist")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.data().orientations[nodesMapping.right.at("r_shoulder")] = _dataCache[0] * _dataCache[4].inverse(); // do pleców
+		newMotionState.data().orientations[nodesMapping.right.at("r_elbow")] = _dataCache[3] * _dataCache[0].inverse(); // do ramienia
+		newMotionState.data().orientations[nodesMapping.right.at("l_wrist")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 		////newMotionState.orientations[nodesMapping.right.at("l_middle_distal_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 		//////w prawo (zamieniona z praw¹)
-		newMotionState.orientations[nodesMapping.right.at("l_shoulder")] = _dataCache[5] * _dataCache[4].inverse(); // do pleców
-		newMotionState.orientations[nodesMapping.right.at("l_elbow")] = _dataCache[11] * _dataCache[5].inverse(); // do ramienia
-		newMotionState.orientations[nodesMapping.right.at("r_wrist")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
+		newMotionState.data().orientations[nodesMapping.right.at("l_shoulder")] = _dataCache[5] * _dataCache[4].inverse(); // do pleców
+		newMotionState.data().orientations[nodesMapping.right.at("l_elbow")] = _dataCache[11] * _dataCache[5].inverse(); // do ramienia
+		newMotionState.data().orientations[nodesMapping.right.at("r_wrist")] = osg::Quat(0.0, 0.0, 0.0, 1.0);
 		////newMotionState.orientations[nodesMapping.right.at("r_middle_distal_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 
 		//////g³owa
-		newMotionState.orientations[nodesMapping.right.at("skullbase")] = _dataCache[2] * _dataCache[4].inverse(); // do pleców
+		newMotionState.data().orientations[nodesMapping.right.at("skullbase")] = _dataCache[2] * _dataCache[4].inverse(); // do pleców
 		//newMotionState.orientations[nodesMapping.right.at("skull_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
 
 		// Return new motion state (we estimate here)
@@ -767,9 +767,9 @@ void PluginHelper::run()
 
 			//TODO - robimy coœ z danymi
 			//ms.jointsOrientations
-			if (ms.second.orientations.empty() == false)
+			if (ms.second.data().orientations.empty() == false)
 			{
-				osg::Quat superQuat = ms.second.orientations[0];
+				osg::Quat superQuat = ms.second.data().orientations[0];
 
 			}
 
