@@ -24,7 +24,8 @@ class InertialCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 
 public:
 	//! Simple constructor
-	InertialCalibrationAlgorithm() {}
+	InertialCalibrationAlgorithm() : _bindPoseSet(false), _bowPoseSet(false)
+	{}
 
 	virtual ~InertialCalibrationAlgorithm(){}
 
@@ -39,7 +40,7 @@ public:
 	virtual void reset() override { SensorsDescriptions().swap(sa); }
 
 	//! Returns max number (n) of steps that algorithm might require to calibrate costume, 0 means no upper limit
-	virtual unsigned int maxCalibrationSteps() const override { return 1; }
+	virtual unsigned int maxCalibrationSteps() const override { return 0; }
 
 	//! Calibration initialization method
 	/*!
@@ -61,6 +62,20 @@ public:
 	*/
 	virtual bool calibrate(const IMU::SensorsData & data, const double inDeltaT) override
 	{
+		// TODO: read from skeleton config - Root sensor ID
+		imuCostume::Costume::SensorID rootSensorID = 8;
+		auto sensorDataIter = data.find(rootSensorID);
+
+		// Is bind pose set?
+		if (_bindPoseSet && (sensorDataIter != data.end()))
+		{
+			osg::Quat rootOri = sensorDataIter->second.orientation;
+			return true; // Temp - mark as ready
+		}
+
+		// Not ready yet
+		return false;
+
 #ifdef STATIC_TOPOLOGY
 		// No callibration
 		for (auto& keyValue : sa)
@@ -74,6 +89,12 @@ public:
 		// Not implemented! //
 		return false;
 #endif // !STATIC_TOPOLOGY
+	}
+
+	//! \return Widget kalibracyjny (informacje o aktualnym stanie kalibracji, instrukcje dla usera)
+	virtual QWidget* calibrationWidget() 
+	{ 
+		return new CalibWidget(&_bindPoseSet, &_bowPoseSet);
 	}
 
 	//! \return Dane kalibracyjne szkieletu, poprawki dla sensorów
@@ -92,6 +113,8 @@ private:
 
 	SensorsDescriptions sa;
 	std::set<imuCostume::Costume::SensorID> _sensorCallibrated;
+	bool _bindPoseSet;
+	bool _bowPoseSet;
 };
 
 //! Naive motion estimation algorithm

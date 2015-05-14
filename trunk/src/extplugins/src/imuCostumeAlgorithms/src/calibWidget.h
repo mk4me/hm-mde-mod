@@ -15,9 +15,10 @@ class CalibWidget : public QWidget, public Ui_calibForm
     Q_OBJECT;
 
 public:
-    CalibWidget();
+    CalibWidget(bool *bindPoseFlag, bool *bowPoseFlag);
 
-//private slots:
+private slots:
+	void bindClickedSig();
 //    void radioChecked();
 //    void saveFilter();
 
@@ -25,7 +26,8 @@ public:
 //	void angleChanged(float angle);
 
 private:
-
+	bool *_bindPoseFlag;
+	bool *_bowPoseFlag;
 };
 
 #endif  //  HEADER_GUARD___CALIBWIDGET_H__
