@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>375</width>
-    <height>107</height>
+    <width>489</width>
+    <height>164</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -21,61 +21,60 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QLabel" name="calibLabel">
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0" colspan="2">
+      <widget class="QLabel" name="stageLabel">
        <property name="font">
         <font>
          <family>Arial</family>
-         <pointsize>14</pointsize>
+         <pointsize>26</pointsize>
         </font>
        </property>
        <property name="text">
-        <string>Minimize error (&lt;10):</string>
+        <string>Instruction Text</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QLabel" name="calibText">
+     <item row="1" column="0">
+      <widget class="QPushButton" name="bindButton">
        <property name="font">
         <font>
          <family>Arial</family>
-         <pointsize>14</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
-        <string>999</string>
+        <string>BIND POSE</string>
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QLabel" name="calibdegLabel">
+     <item row="1" column="1">
+      <widget class="QPushButton" name="bowButton">
        <property name="font">
         <font>
          <family>Arial</family>
-         <pointsize>14</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
-        <string>degree(s).</string>
+        <string>BOW POSE</string>
        </property>
       </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QPushButton" name="pushButton">
-     <property name="text">
-      <string>BIND POSE</string>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>
  <resources/>
  <connections>
   <connection>
-   <sender>pushButton</sender>
+   <sender>bindButton</sender>
    <signal>clicked()</signal>
    <receiver>calibForm</receiver>
    <slot>bindClickedSig()</slot>
@@ -90,8 +89,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>bowButton</sender>
+   <signal>clicked()</signal>
+   <receiver>calibForm</receiver>
+   <slot>bowClickedSig()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>125</x>
+     <y>137</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>244</x>
+     <y>81</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>bindClickedSig()</slot>
+  <slot>bowClickedSig()</slot>
  </slots>
 </ui>

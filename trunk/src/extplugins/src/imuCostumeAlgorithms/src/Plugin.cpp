@@ -24,7 +24,7 @@ class InertialCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 
 public:
 	//! Simple constructor
-	InertialCalibrationAlgorithm() : _bindPoseSet(false), _bowPoseSet(false)
+	InertialCalibrationAlgorithm() : _calibStage(CalibWidget::CS_START)
 	{}
 
 	virtual ~InertialCalibrationAlgorithm(){}
@@ -63,18 +63,44 @@ public:
 	virtual bool calibrate(const IMU::SensorsData & data, const double inDeltaT) override
 	{
 		// TODO: read from skeleton config - Root sensor ID
-		imuCostume::Costume::SensorID rootSensorID = 8;
-		auto sensorDataIter = data.find(rootSensorID);
+		//imuCostume::Costume::SensorID rootSensorID = 8;
+		//auto sensorDataIter = data.find(rootSensorID);
 
-		// Is bind pose set?
-		if (_bindPoseSet && (sensorDataIter != data.end()))
+		//// Is bind pose set?
+		//if (_bindPoseSet && (sensorDataIter != data.end()))
+		//{
+		//	osg::Quat rootOri = sensorDataIter->second.orientation;
+		//	return true; // Temp - mark as ready
+		//}
+
+		// Parse proper stage
+		switch (_calibStage)
 		{
-			osg::Quat rootOri = sensorDataIter->second.orientation;
-			return true; // Temp - mark as ready
+		// Callibration starting phase - just pass packets
+		case CalibWidget::CS_START:
+			// Waiting for operator to press bind button and for user to assume bind pose
+			return false;
+
+		// Read bind pose
+		case CalibWidget::CS_BINDPOSE:
+			// User is in the bind pose, we can aquire right quaternion now
+			// ...
+
+			return false;
+
+		// Read bow pose
+		case CalibWidget::CS_BOWPOSE:
+			// User is in the bow pose, we can aquire right quaternion now
+			// ...
+
+			// Callibration is finished, form will be killed now
+			return true;
+
+		// Unknown stage
+		default:
+			return false;
 		}
 
-		// Not ready yet
-		return false;
 
 #ifdef STATIC_TOPOLOGY
 		// No callibration
@@ -94,14 +120,7 @@ public:
 	//! \return Widget kalibracyjny (informacje o aktualnym stanie kalibracji, instrukcje dla usera)
 	virtual QWidget* calibrationWidget() 
 	{ 
-		QWidget* retQ = new CalibWidget(&_bindPoseSet, &_bowPoseSet);
-		if (retQ)
-		{
-			retQ->setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::WindowStaysOnTopHint | Qt::CustomizeWindowHint);
-			retQ->setVisible(true);
-			retQ->show();
-		}
-		return retQ;
+		return new CalibWidget(_calibStage);
 	}
 
 	//! \return Dane kalibracyjne szkieletu, poprawki dla sensorów
@@ -120,8 +139,7 @@ private:
 
 	SensorsDescriptions sa;
 	std::set<imuCostume::Costume::SensorID> _sensorCallibrated;
-	bool _bindPoseSet;
-	bool _bowPoseSet;
+	CalibWidget::ECalibStage _calibStage;
 };
 
 //! Naive motion estimation algorithm

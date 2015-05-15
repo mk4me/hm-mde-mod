@@ -15,19 +15,20 @@ class CalibWidget : public QWidget, public Ui_calibForm
     Q_OBJECT;
 
 public:
-    CalibWidget(bool *bindPoseFlag, bool *bowPoseFlag);
+	typedef enum { CS_START, CS_BINDPOSE, CS_BOWPOSE } ECalibStage;
+	//! Simple constructor
+	CalibWidget(ECalibStage& _calibStage);
 
 private slots:
 	void bindClickedSig();
-//    void radioChecked();
-//    void saveFilter();
+	void bowClickedSig();
 
 //signals:
 //	void angleChanged(float angle);
 
 private:
-	bool *_bindPoseFlag;
-	bool *_bowPoseFlag;
+	ECalibStage& _calibStage;
+
 };
 
 #endif  //  HEADER_GUARD___CALIBWIDGET_H__
