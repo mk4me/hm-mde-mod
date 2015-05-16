@@ -17,10 +17,17 @@
 
 #define STATIC_TOPOLOGY // if defined, uses old version of the callibration (face (Y) to the (W)est)
 
+#ifdef STATIC_TOPOLOGY
+osg::Quat g_zFix = osg::Quat(0.0, 0.0, 0.0, 1.0);
+#endif
+
 //! Basic callibration algorithm using gravity vector and magnetometer
 class InertialCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 {
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}");
+
+private:
+	typedef std::map<imuCostume::Costume::SensorID, osg::Quat> RawSensorOrientations;
 
 public:
 	//! Simple constructor
@@ -63,15 +70,13 @@ public:
 	virtual bool calibrate(const IMU::SensorsData & data, const double inDeltaT) override
 	{
 		// TODO: read from skeleton config - Root sensor ID
-		//imuCostume::Costume::SensorID rootSensorID = 8;
-		//auto sensorDataIter = data.find(rootSensorID);
+		imuCostume::Costume::SensorID rootSensorID = 8;
+		auto sensorDataIter = data.find(rootSensorID);
+		osg::Quat rootBowRotation;
 
-		//// Is bind pose set?
-		//if (_bindPoseSet && (sensorDataIter != data.end()))
-		//{
-		//	osg::Quat rootOri = sensorDataIter->second.orientation;
-		//	return true; // Temp - mark as ready
-		//}
+		// No root data - no point to callibrate
+		if (sensorDataIter == data.end())
+			return false;
 
 		// Parse proper stage
 		switch (_calibStage)
@@ -84,13 +89,26 @@ public:
 		// Read bind pose
 		case CalibWidget::CS_BINDPOSE:
 			// User is in the bind pose, we can aquire right quaternion now
-			// ...
+			
+			// Get initial orientations (used as initial callibration vectors)
+			if (_calibBindStage.empty()) // so user wont change it, while going from bind to bow
+				_calibBindStage = sdCloneOrientations(data);
 
 			return false;
 
 		// Read bow pose
 		case CalibWidget::CS_BOWPOSE:
 			// User is in the bow pose, we can aquire right quaternion now
+			
+			// Get orientations in bow pose (used to calculate Y vec and zFix)
+			if (_calibBowStage.empty())
+				_calibBowStage = sdCloneOrientations(data);
+
+			// Calc zFix for globally callibrated sensor
+			rootBowRotation = _calibBindStage[rootSensorID] * _calibBowStage[rootSensorID].inverse(); // Contains X rotation now
+			g_zFix = GetZFix(rootBowRotation);
+
+			// Create global calibration table
 			// ...
 
 			// Callibration is finished, form will be killed now
@@ -138,8 +156,66 @@ public:
 private:
 
 	SensorsDescriptions sa;
-	std::set<imuCostume::Costume::SensorID> _sensorCallibrated;
 	CalibWidget::ECalibStage _calibStage;
+
+	RawSensorOrientations _calibBindStage;
+	RawSensorOrientations _calibBowStage;
+
+	//! Extracts orientations from IMU data vector
+	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData) const
+	{
+		RawSensorOrientations retVec;
+
+		for (const auto & item : inData)
+		{
+			retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation));
+		}
+
+		return retVec;
+	}
+
+	RawSensorOrientations sdApplyPostMult(const RawSensorOrientations& inData, const osg::Quat& inQuat) const
+	{
+		RawSensorOrientations retVec;
+
+		for (const auto & item : inData)
+		{
+			retVec.insert(RawSensorOrientations::value_type(item.first, item.second * inQuat));
+		}
+
+		return retVec;
+	}
+
+	RawSensorOrientations sdApplyPreMult(const RawSensorOrientations& inData, const osg::Quat& inQuat) const
+	{
+		RawSensorOrientations retVec;
+
+		for (const auto & item : inData)
+		{
+			retVec.insert(RawSensorOrientations::value_type(item.first, inQuat * item.second));
+		}
+
+		return retVec;
+	}
+
+	// Calculates zFix
+	osg::Quat GetZFix(const osg::Quat& bowRotation) const
+	{
+		// Calc zFix
+		// Cast on XY plane
+		osg::Vec3d xVec = osg::Vec3d(bowRotation.x(), bowRotation.y(), 0.0);
+		xVec.normalize();
+
+		// We bow, so rotation is negative (from Z to Y, will give -X axis)
+		xVec *= -1.0;
+
+		// Calc fix value
+		osg::Quat zFix;
+		zFix.makeRotate(osg::Vec3d(1.0, 0.0, 0.0), xVec);
+
+		// Return value
+		return zFix;
+	}
 };
 
 //! Naive motion estimation algorithm
@@ -618,7 +694,10 @@ public:
 		}
 
 		// Requires actor to face (W)est - (N)orth will be on the right side (rotation around global X axis)
-		return _calibQuat * orient.inverse(); 
+		osg::Quat retVec =_calibQuat * orient.inverse(); 
+
+		// TODO: remove me?
+		return g_zFix * retVec * g_zFix.inverse();
 
 #else // STATIC_TOPOLOGY
 		// Not implemented. //
