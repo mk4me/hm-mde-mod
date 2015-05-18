@@ -15,7 +15,7 @@
 #include "filter_lib\lib_main.h"
 #include "calibWidget.h"
 
-#define STATIC_TOPOLOGY // if defined, uses old version of the callibration (face (Y) to the (W)est)
+//#define STATIC_TOPOLOGY // if defined, uses old version of the callibration (face (Y) to the (W)est)
 
 #ifdef STATIC_TOPOLOGY
 osg::Quat g_zFix = osg::Quat(0.0, 0.0, 0.0, 1.0);
@@ -69,10 +69,21 @@ public:
 	*/
 	virtual bool calibrate(const IMU::SensorsData & data, const double inDeltaT) override
 	{
+#ifdef STATIC_TOPOLOGY
+		// No callibration
+		for (auto& keyValue : sa)
+		{
+			keyValue.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
+			keyValue.second.preMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+			keyValue.second.postMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+			//keyValue.second.rotation = osg::Quat(3.14 / 2, osg::Vec3d(1.0, 0.0, 0.0));
+		}
+		return true;
+#else // STATIC_TOPOLOGY
 		// TODO: read from skeleton config - Root sensor ID
 		imuCostume::Costume::SensorID rootSensorID = 8;
 		auto sensorDataIter = data.find(rootSensorID);
-		osg::Quat rootBowRotation;
+		osg::Quat rootBowRotation, zFix;
 
 		// No root data - no point to callibrate
 		if (sensorDataIter == data.end())
@@ -81,56 +92,51 @@ public:
 		// Parse proper stage
 		switch (_calibStage)
 		{
-		// Callibration starting phase - just pass packets
+			// Callibration starting phase - just pass packets
 		case CalibWidget::CS_START:
 			// Waiting for operator to press bind button and for user to assume bind pose
 			return false;
 
-		// Read bind pose
+			// Read bind pose
 		case CalibWidget::CS_BINDPOSE:
 			// User is in the bind pose, we can aquire right quaternion now
-			
+
 			// Get initial orientations (used as initial callibration vectors)
 			if (_calibBindStage.empty()) // so user wont change it, while going from bind to bow
 				_calibBindStage = sdCloneOrientations(data);
 
 			return false;
 
-		// Read bow pose
+			// Read bow pose
 		case CalibWidget::CS_BOWPOSE:
 			// User is in the bow pose, we can aquire right quaternion now
-			
+
 			// Get orientations in bow pose (used to calculate Y vec and zFix)
 			if (_calibBowStage.empty())
 				_calibBowStage = sdCloneOrientations(data);
 
 			// Calc zFix for globally callibrated sensor
 			rootBowRotation = _calibBindStage[rootSensorID] * _calibBowStage[rootSensorID].inverse(); // Contains X rotation now
-			g_zFix = GetZFix(rootBowRotation);
+			zFix = GetZFix(rootBowRotation);
 
 			// Create global calibration table
 			// ...
 
+			// Calculate callibration offets
+			for (auto& keyValue : sa)
+			{
+				keyValue.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
+				keyValue.second.preMulRotation =  osg::Quat(0.0, 0.0, 0.0, 1.0); //osg::Quat(osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));
+				keyValue.second.postMulRotation = osg::Quat(-osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));  //osg::Quat(0.0, 0.0, 0.0, 1.0);
+			}
+
 			// Callibration is finished, form will be killed now
 			return true;
 
-		// Unknown stage
+			// Unknown stage
 		default:
 			return false;
 		}
-
-
-#ifdef STATIC_TOPOLOGY
-		// No callibration
-		for (auto& keyValue : sa)
-		{
-			keyValue.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
-			keyValue.second.rotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
-			//keyValue.second.rotation = osg::Quat(3.14 / 2, osg::Vec3d(1.0, 0.0, 0.0));
-		}
-		return true;
-#else // STATIC_TOPOLOGY
-		// Not implemented! //
 		return false;
 #endif // !STATIC_TOPOLOGY
 	}
@@ -162,13 +168,25 @@ private:
 	RawSensorOrientations _calibBowStage;
 
 	//! Extracts orientations from IMU data vector
-	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData) const
+	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData, bool invertAll = false) const
 	{
 		RawSensorOrientations retVec;
 
-		for (const auto & item : inData)
+		if (invertAll)
 		{
-			retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation));
+			// Extraction with inversion
+			for (const auto & item : inData)
+			{
+				retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation.inverse()));
+			}
+		}
+		else
+		{
+			// Regular extraction
+			for (const auto & item : inData)
+			{
+				retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation));
+			}
 		}
 
 		return retVec;
@@ -319,8 +337,8 @@ public:
 
 		// Return new motion state (we estimate here)
 		return newMotionState;
-#else // STATIC TOPOLOGY
-		// Not implemented! //
+#else // !STATIC TOPOLOGY
+		// Not needed! //
 		return motionState;
 #endif // !STATIC_TOPOLOGY
 	}
@@ -699,8 +717,8 @@ public:
 		// TODO: remove me?
 		return g_zFix * retVec * g_zFix.inverse();
 
-#else // STATIC_TOPOLOGY
-		// Not implemented. //
+#else // !STATIC_TOPOLOGY
+		// Pass through mode
 		return osg::Quat(0.0, 0.0, 0.0, 1.0);
 #endif
 	}
