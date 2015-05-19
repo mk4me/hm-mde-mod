@@ -30,6 +30,9 @@ private:
 	typedef std::map<imuCostume::Costume::SensorID, osg::Quat> RawSensorOrientations;
 
 public:
+	//! Global root bone name
+	static std::string ROOT_BONE_NAME;
+
 	//! Simple constructor
 	InertialCalibrationAlgorithm() : _calibStage(CalibWidget::CS_START)
 	{}
@@ -174,8 +177,6 @@ private:
 
 	RawSensorOrientations _calibBindStage;
 	RawSensorOrientations _calibBowStage;
-
-	static std::string ROOT_BONE_NAME;
 
 	//! Extracts orientations from IMU data vector
 	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData, bool invertAll = false) const
@@ -838,7 +839,7 @@ bool PluginHelper::init()
 			imuDS->registerOrientationEstimationAlgorithm(IMU::IIMUOrientationEstimationAlgorithmPtr(new HardwareKalmanEstimationAlgorithm));
 
 			//szkielet
-			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>(createJoint(kinematic::Skeleton::JointPtr(), "HumanoidRoot", norm(osg::Vec3(0, 0, 0))));
+			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>(createJoint(kinematic::Skeleton::JointPtr(), InertialCalibrationAlgorithm::ROOT_BONE_NAME, norm(osg::Vec3(0, 0, 0))));
 			//dummySkeleton->name = "DummySkeleton";
 
 #ifdef STATIC_TOPOLOGY
