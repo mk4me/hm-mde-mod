@@ -44,7 +44,7 @@ public:
 	virtual std::string name() const override { return "Inertial callibration algorithm"; }
 
 	//! Resets algo internal state
-	virtual void reset() override { SensorsDescriptions().swap(sa); }
+	virtual void reset() override { SensorsDescriptions().swap(_sensorAdjustements); }
 
 	//! Returns max number (n) of steps that algorithm might require to calibrate costume, 0 means no upper limit
 	virtual unsigned int maxCalibrationSteps() const override { return 0; }
@@ -58,7 +58,7 @@ public:
 	virtual void initialize(kinematic::SkeletonConstPtr skeleton,
 		const SensorsDescriptions & sensorsDescription) override
 	{
-		sa = sensorsDescription;
+		_sensorAdjustements = sensorsDescription;
 	}
 
 	//! Calculates orientation from sensor fusion
@@ -80,13 +80,12 @@ public:
 		}
 		return true;
 #else // STATIC_TOPOLOGY
-		// TODO: read from skeleton config - Root sensor ID
-		imuCostume::Costume::SensorID rootSensorID = 8;
-		auto sensorDataIter = data.find(rootSensorID);
+		// Read root sensor ID from skeleton config
+		imuCostume::Costume::SensorID rootSensorID = FindRootSensorID(_sensorAdjustements);
 		osg::Quat rootBowRotation, zFix;
 
 		// No root data - no point to callibrate
-		if (sensorDataIter == data.end())
+		if (rootSensorID == -1)
 			return false;
 
 		// Parse proper stage
@@ -103,7 +102,8 @@ public:
 
 			// Get initial orientations (used as initial callibration vectors)
 			if (_calibBindStage.empty()) // so user wont change it, while going from bind to bow
-				_calibBindStage = sdCloneOrientations(data);
+				_calibBindStage = sdCloneOrientations(data, true); // I NEED EXACT READINGS AND I INVERT 
+																   // READING IN ESTIMATE_SENSOR (to get raw quaternions from hardware)
 
 			return false;
 
@@ -113,25 +113,29 @@ public:
 
 			// Get orientations in bow pose (used to calculate Y vec and zFix)
 			if (_calibBowStage.empty())
-				_calibBowStage = sdCloneOrientations(data);
+				_calibBowStage = sdCloneOrientations(data, true);  // I NEED EXACT READINGS AND I INVERT 
+																   // READING IN ESTIMATE_SENSOR (to get raw quaternions from hardware)
 
 			// Calc zFix for globally callibrated sensor
 			rootBowRotation = _calibBindStage[rootSensorID] * _calibBowStage[rootSensorID].inverse(); // Contains X rotation now
 			zFix = GetZFix(rootBowRotation);
 
-			// Create global calibration table
-			// ...
-
-			// Calculate callibration offets
-			for (auto& keyValue : sa)
+			// Clear sensor adjustements
+			for (auto& saKeyVal : _sensorAdjustements)
 			{
-				keyValue.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
-				
-				keyValue.second.preMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0); 
-				//keyValue.second.preMulRotation = osg::Quat(osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));
-				
-				keyValue.second.postMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
-				//keyValue.second.postMulRotation = osg::Quat(-osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));  
+				saKeyVal.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
+				saKeyVal.second.preMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+				saKeyVal.second.postMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+			}
+
+			// Fill callibration table
+			UTILS_ASSERT(_calibBindStage.size() == _sensorAdjustements.size());
+			for (const auto& calBindItem : _calibBindStage)
+			{
+				// Get element reference
+				auto & saRef = _sensorAdjustements[calBindItem.first];
+				saRef.preMulRotation = zFix * calBindItem.second; // Align face and calib sensor to global coordinate frame (with respect to accel (-Z) and global north (X))
+				saRef.postMulRotation = zFix.inverse();
 			}
 
 			// Callibration is finished, form will be killed now
@@ -156,7 +160,7 @@ public:
 	{
 		SensorsAdjustemnts ret;
 
-		for (const auto & sd : sa)
+		for (const auto & sd : _sensorAdjustements)
 		{
 			ret.insert(SensorsAdjustemnts::value_type(sd.first, sd.second));
 		}
@@ -165,11 +169,13 @@ public:
 	}
 private:
 
-	SensorsDescriptions sa;
+	SensorsDescriptions _sensorAdjustements;
 	CalibWidget::ECalibStage _calibStage;
 
 	RawSensorOrientations _calibBindStage;
 	RawSensorOrientations _calibBowStage;
+
+	static std::string ROOT_BONE_NAME;
 
 	//! Extracts orientations from IMU data vector
 	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData, bool invertAll = false) const
@@ -179,7 +185,7 @@ private:
 		if (invertAll)
 		{
 			// Extraction with inversion
-			for (const auto & item : inData)
+			for (const auto& item : inData)
 			{
 				retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation.inverse()));
 			}
@@ -187,7 +193,7 @@ private:
 		else
 		{
 			// Regular extraction
-			for (const auto & item : inData)
+			for (const auto& item : inData)
 			{
 				retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation));
 			}
@@ -196,11 +202,12 @@ private:
 		return retVec;
 	}
 
+	//! Applies multiplication vector times vector (post)
 	RawSensorOrientations sdApplyPostMult(const RawSensorOrientations& inData, const osg::Quat& inQuat) const
 	{
 		RawSensorOrientations retVec;
 
-		for (const auto & item : inData)
+		for (const auto& item : inData)
 		{
 			retVec.insert(RawSensorOrientations::value_type(item.first, item.second * inQuat));
 		}
@@ -208,16 +215,30 @@ private:
 		return retVec;
 	}
 
+	//! Applies multiplication vector times vector (pre)
 	RawSensorOrientations sdApplyPreMult(const RawSensorOrientations& inData, const osg::Quat& inQuat) const
 	{
 		RawSensorOrientations retVec;
 
-		for (const auto & item : inData)
+		for (const auto& item : inData)
 		{
 			retVec.insert(RawSensorOrientations::value_type(item.first, inQuat * item.second));
 		}
 
 		return retVec;
+	}
+
+	//! Finds root sensor ID in sensor adjustements
+	imuCostume::Costume::SensorID FindRootSensorID(const SensorsDescriptions& inSensorDesc) const
+	{
+		for (const auto& item : inSensorDesc)
+		{
+			if (item.second.jointName == ROOT_BONE_NAME)
+				return item.first;
+		}
+
+		// Errorneous ID
+		return -1;
 	}
 
 	// Calculates zFix
@@ -342,7 +363,7 @@ public:
 		// Return new motion state (we estimate here)
 		return newMotionState;
 #else // !STATIC TOPOLOGY
-		// Not needed! //
+		// Not needed! - passthrough mode
 		return motionState;
 #endif // !STATIC_TOPOLOGY
 	}
@@ -725,23 +746,15 @@ public:
 		return g_zFix * retVec * g_zFix.inverse();
 
 #else // !STATIC_TOPOLOGY
-		// Pass through mode
-		if (!_callibrated)
-		{
-			// My orientation becomes a reference (we have orientation corresponding 
-			// to accelerometer and magnetometer in global coordinate frame)
-			_calibQuat = orient;
-			_callibrated = true;
-		}
-
-		// Requires actor to face (W)est - (N)orth will be on the right side (rotation around global X axis)
-		osg::Quat retVec = _calibQuat * orient.inverse();
-		return retVec;
-		//return osg::Quat(osg::PI_4, osg::Vec3d(0.0, 1.0, 0.0));
-		//return osg::Quat(0.0, 0.0, 0.0, 1.0);
+		// I invert readings here, because I don't have access to skeleton estimation
+		// I patch it in callibration protocol
+		return orient.inverse();
 #endif
 	}
 };
+
+// Configuration statics
+std::string InertialCalibrationAlgorithm::ROOT_BONE_NAME = "HumanoidRoot";
 
 // Helper ID for Matlab Dumper Estimation Algorithm
 #ifdef STATIC_TOPOLOGY
