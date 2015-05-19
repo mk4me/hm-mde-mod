@@ -126,8 +126,12 @@ public:
 			for (auto& keyValue : sa)
 			{
 				keyValue.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
-				keyValue.second.preMulRotation =  osg::Quat(0.0, 0.0, 0.0, 1.0); //osg::Quat(osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));
-				keyValue.second.postMulRotation = osg::Quat(-osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));  //osg::Quat(0.0, 0.0, 0.0, 1.0);
+				
+				keyValue.second.preMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0); 
+				//keyValue.second.preMulRotation = osg::Quat(osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));
+				
+				keyValue.second.postMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+				//keyValue.second.postMulRotation = osg::Quat(-osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));  
 			}
 
 			// Callibration is finished, form will be killed now
@@ -345,7 +349,7 @@ public:
 
 private:
 
-	kinematic::SkeletonConstPtr skeleton;	
+	kinematic::SkeletonConstPtr skeleton;
 	IMU::IMUCostumeCalibrationAlgorithm::SensorsDescriptions sensorsMapping;
 	boost::posix_time::ptime _lastTick;
 	std::map<imuCostume::Costume::SensorID, osg::Quat> _dataCache;
@@ -646,11 +650,14 @@ private:
 	unsigned int _sensorID;
 
 	static unsigned int _currSensorID;
+#else
+	osg::Quat _calibQuat;
+	bool _callibrated;
 #endif // STATIC_TOPOLOGY
 
 public:
 	//! Simple constructor
-	HardwareKalmanEstimationAlgorithm() 
+	HardwareKalmanEstimationAlgorithm() : _callibrated(false)
 #ifdef STATIC_TOPOLOGY
 		: _callibrated(false), _sensorID(_currSensorID++) // Post increment - Set next id
 #endif // STATIC_TOPOLOGY
@@ -719,7 +726,19 @@ public:
 
 #else // !STATIC_TOPOLOGY
 		// Pass through mode
-		return osg::Quat(0.0, 0.0, 0.0, 1.0);
+		if (!_callibrated)
+		{
+			// My orientation becomes a reference (we have orientation corresponding 
+			// to accelerometer and magnetometer in global coordinate frame)
+			_calibQuat = orient;
+			_callibrated = true;
+		}
+
+		// Requires actor to face (W)est - (N)orth will be on the right side (rotation around global X axis)
+		osg::Quat retVec = _calibQuat * orient.inverse();
+		return retVec;
+		//return osg::Quat(osg::PI_4, osg::Vec3d(0.0, 1.0, 0.0));
+		//return osg::Quat(0.0, 0.0, 0.0, 1.0);
 #endif
 	}
 };
@@ -809,6 +828,7 @@ bool PluginHelper::init()
 			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>(createJoint(kinematic::Skeleton::JointPtr(), "HumanoidRoot", norm(osg::Vec3(0, 0, 0))));
 			//dummySkeleton->name = "DummySkeleton";
 
+#ifdef STATIC_TOPOLOGY
 			//lewa noga
 			auto j = createJoint(dummySkeleton->root(), "l_hip", norm(osg::Vec3(16, 0, 0)));
 			j = createJoint(j, "l_knee", norm(osg::Vec3(0, 0, -50)));
@@ -837,6 +857,36 @@ bool PluginHelper::init()
 			//g³owa
 			j = createJoint(vt, "skullbase", norm(osg::Vec3(0, 0, 15)));
 			j = createJoint(j, "skull_tip", norm(osg::Vec3(0, 0, 23)));
+#else // !STATIC_TOPOLOGY
+			//lewa noga
+			auto j = createJoint(dummySkeleton->root(), "l_hip", norm(osg::Vec3(-16, 0, 0)));
+			j = createJoint(j, "l_knee", norm(osg::Vec3(0, 0, -50)));
+			j = createJoint(j, "l_ankle", norm(osg::Vec3(0, 0, -45)));
+			j = createJoint(j, "l_forefoot_tip", norm(osg::Vec3(0, 26.5, 0)));
+
+			//prawa noga
+			j = createJoint(dummySkeleton->root(), "r_hip", norm(osg::Vec3(16, 0, 0)));
+			j = createJoint(j, "r_knee", norm(osg::Vec3(0, 0, -50)));
+			j = createJoint(j, "r_ankle", norm(osg::Vec3(0, 0, -45)));
+			j = createJoint(j, "r_forefoot_tip", norm(osg::Vec3(0, 26.5, 0)));
+
+			//w górê
+			auto vt = createJoint(dummySkeleton->root(), "vt1", norm(osg::Vec3(0, 0, 50)));
+			// w lewo
+			j = createJoint(vt, "l_shoulder", norm(osg::Vec3(-23.5, 0, 0)));
+			j = createJoint(j, "l_elbow", norm(osg::Vec3(0, 0, -30)));
+			j = createJoint(j, "l_wrist", norm(osg::Vec3(0, 0, -30)));
+			j = createJoint(j, "l_middle_distal_tip", norm(osg::Vec3(0, 0, -17)));
+			//w prawo
+			j = createJoint(vt, "r_shoulder", norm(osg::Vec3(23.5, 0, 0)));
+			j = createJoint(j, "r_elbow", norm(osg::Vec3(0, 0, -30)));
+			j = createJoint(j, "r_wrist", norm(osg::Vec3(0, 0, -30)));
+			j = createJoint(j, "r_middle_distal_tip", norm(osg::Vec3(0, 0, -17)));
+
+			//g³owa
+			j = createJoint(vt, "skullbase", norm(osg::Vec3(0, 0, 15)));
+			j = createJoint(j, "skull_tip", norm(osg::Vec3(0, 0, 23)));
+#endif // !STATIC_TOPOLOGY
 
 			imuDS->registerSkeletonModel(utils::make_shared<IMU::Skeleton>(core::UID::GenerateUniqueID("{D7801231-BACA-42C6-9A8E-2000000A563F}"), "DummySkeleton", *dummySkeleton));
 		}
