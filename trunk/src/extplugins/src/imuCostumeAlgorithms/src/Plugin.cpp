@@ -20,6 +20,7 @@
 #ifdef STATIC_TOPOLOGY
 osg::Quat g_zFix = osg::Quat(0.0, 0.0, 0.0, 1.0);
 #endif
+IMU::IMUCostumeCalibrationAlgorithm::SensorsDescriptions g_sensorsAdjustements;
 
 //! Basic callibration algorithm using gravity vector and magnetometer
 class InertialCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
@@ -34,7 +35,7 @@ public:
 	static std::string ROOT_BONE_NAME;
 
 	//! Simple constructor
-	InertialCalibrationAlgorithm() : _calibStage(CalibWidget::CS_START)
+	InertialCalibrationAlgorithm() : _calibStage(CalibWidget::CS_START), _calibWindow(nullptr)
 	{}
 
 	virtual ~InertialCalibrationAlgorithm(){}
@@ -91,33 +92,57 @@ public:
 		if (rootSensorID == -1)
 			return false;
 
+		// Always update cache - RAW orientations
+		sdCloneAndUpdate(_stageCache, data, true);
+
 		// Parse proper stage
 		switch (_calibStage)
 		{
-			// Callibration starting phase - just pass packets
+		// Callibration starting phase - just pass packets
 		case CalibWidget::CS_START:
 			// Waiting for operator to press bind button and for user to assume bind pose
+			_stageCache.clear();
 			return false;
 
-			// Read bind pose
+		// Read bind pose
 		case CalibWidget::CS_BINDPOSE:
-			// User is in the bind pose, we can aquire right quaternion now
+			// User is in the bind pose, we can aquire right quaternions now
 
-			// Get initial orientations (used as initial callibration vectors)
-			if (_calibBindStage.empty()) // so user wont change it, while going from bind to bow
-				_calibBindStage = sdCloneOrientations(data, true); // I NEED EXACT READINGS AND I INVERT 
-																   // READING IN ESTIMATE_SENSOR (to get raw quaternions from hardware)
+			// Calibration quaternions are set - just return, so user wont change it, while going from bind to bow
+			if (!_calibBindStage.empty())
+				return false;
+				
+			// We have all readings
+			if (_stageCache.size() == _sensorAdjustements.size())
+			{
+				// Stage snapshot
+				_calibBindStage = _stageCache; // I NEED EXACT READINGS AND I INVERT 
+												// READING IN ESTIMATE_SENSOR (to get raw quaternions from hardware)
+
+				// Enagle bow button
+				if (_calibWindow)
+					_calibWindow->bowButton->setEnabled(true);
+
+				// Clear cache
+				_stageCache.clear();
+			}
 
 			return false;
 
-			// Read bow pose
+		// Read bow pose
 		case CalibWidget::CS_BOWPOSE:
 			// User is in the bow pose, we can aquire right quaternion now
 
+			// Wait till we have all sensors
+			if (_stageCache.size() != _sensorAdjustements.size())
+				return false;
+
 			// Get orientations in bow pose (used to calculate Y vec and zFix)
-			if (_calibBowStage.empty())
-				_calibBowStage = sdCloneOrientations(data, true);  // I NEED EXACT READINGS AND I INVERT 
-																   // READING IN ESTIMATE_SENSOR (to get raw quaternions from hardware)
+			_calibBowStage = _stageCache;  // I NEED EXACT READINGS AND I INVERT 
+											// READING IN ESTIMATE_SENSOR (to get raw quaternions from hardware)
+
+			// Clear cache
+			_stageCache.clear();
 
 			// Calc zFix for globally callibrated sensor
 			rootBowRotation = _calibBindStage[rootSensorID] * _calibBowStage[rootSensorID].inverse(); // Contains X rotation now
@@ -142,9 +167,11 @@ public:
 			}
 
 			// Callibration is finished, form will be killed now
+			g_sensorsAdjustements = _sensorAdjustements;
+			_calibWindow = nullptr;
 			return true;
 
-			// Unknown stage
+		// Unknown stage
 		default:
 			return false;
 		}
@@ -155,7 +182,8 @@ public:
 	//! \return Widget kalibracyjny (informacje o aktualnym stanie kalibracji, instrukcje dla usera)
 	virtual QWidget* calibrationWidget() 
 	{ 
-		return new CalibWidget(_calibStage);
+		_calibWindow = new CalibWidget(_calibStage);
+		return _calibWindow;
 	}
 
 	//! \return Dane kalibracyjne szkieletu, poprawki dla sensorów
@@ -175,8 +203,12 @@ private:
 	SensorsDescriptions _sensorAdjustements;
 	CalibWidget::ECalibStage _calibStage;
 
+	RawSensorOrientations _stageCache;
+
 	RawSensorOrientations _calibBindStage;
 	RawSensorOrientations _calibBowStage;
+
+	CalibWidget* _calibWindow;
 
 	//! Extracts orientations from IMU data vector
 	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData, bool invertAll = false) const
@@ -201,6 +233,27 @@ private:
 		}
 
 		return retVec;
+	}
+
+	//! Extracts orientations from IMU data vector
+	void sdCloneAndUpdate(RawSensorOrientations& outData, const IMU::SensorsData& inData, bool invertAll = false) const
+	{
+		if (invertAll)
+		{
+			// Extraction with inversion
+			for (const auto& item : inData)
+			{
+				outData[item.first] = item.second.orientation.inverse();
+			}
+		}
+		else
+		{
+			// Regular extraction
+			for (const auto& item : inData)
+			{
+				outData[item.first] = item.second.orientation;
+			}
+		}
 	}
 
 	//! Applies multiplication vector times vector (post)
@@ -365,7 +418,34 @@ public:
 		return newMotionState;
 #else // !STATIC TOPOLOGY
 		// Not needed! - passthrough mode
-		return motionState;
+		//return motionState;
+
+
+		// We estimate entire skeleton in-place from raw corrected sensor readings
+		auto newMotionState = motionState;
+
+		// Update cache (I assume data comes incomplete, till proven wrong)
+		for (auto& keyVal : data)
+		{
+			_dataCache[keyVal.first] = g_sensorsAdjustements[keyVal.first].preMulRotation * keyVal.second.orientation * g_sensorsAdjustements[keyVal.first].postMulRotation;
+		}
+
+		// Set root (always 0 index)
+		newMotionState.data().orientations[0] = _dataCache[8];
+
+		////lewa noga
+		newMotionState.data().orientations[nodesMapping.right.at("l_hip")] = _dataCache[6] * _dataCache[8].inverse(); // do roota 
+		newMotionState.data().orientations[nodesMapping.right.at("l_knee")] = _dataCache[10] * _dataCache[6].inverse(); // do biodra
+		newMotionState.data().orientations[nodesMapping.right.at("l_ankle")] = _dataCache[16] * _dataCache[10].inverse(); // do ³ydki
+		////newMotionState.orientations[nodesMapping.right.at("l_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
+
+		//////prawa noga 
+		newMotionState.data().orientations[nodesMapping.right.at("r_hip")] = _dataCache[7] * _dataCache[8].inverse(); // do roota
+		newMotionState.data().orientations[nodesMapping.right.at("r_knee")] = _dataCache[9] * _dataCache[7].inverse(); // do biodra
+		newMotionState.data().orientations[nodesMapping.right.at("r_ankle")] = _dataCache[15] * _dataCache[9].inverse(); // do ³ydki
+		////newMotionState.orientations[nodesMapping.right.at("r_forefoot_tip")] = osg::Quat(0.0, 0.0, 0.0, 1.0); // end effector crash
+
+		return newMotionState;
 #endif // !STATIC_TOPOLOGY
 	}
 

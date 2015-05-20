@@ -21,7 +21,8 @@ void CalibWidget::bindClickedSig()
 		_calibStage = CS_BINDPOSE;
 		stageLabel->setText(QString("Bow, look down.\nOperator should press BOW pose when ready."));
 		bindButton->setEnabled(false);
-		bowButton->setEnabled(true);
+		bowButton->setEnabled(false);
+		//bowButton->setEnabled(true);
 	}
 	else
 		return;
