@@ -418,7 +418,7 @@ public:
 		return newMotionState;
 #else // !STATIC TOPOLOGY
 		// Not needed! - passthrough mode
-		//return motionState;
+		return motionState;
 
 
 		// We estimate entire skeleton in-place from raw corrected sensor readings
