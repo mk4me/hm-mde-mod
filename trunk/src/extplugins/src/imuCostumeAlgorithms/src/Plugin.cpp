@@ -32,7 +32,7 @@ private:
 
 public:
 	//! Global root bone name
-	static std::string ROOT_BONE_NAME;
+	std::string ROOT_BONE_NAME;
 
 	//! Simple constructor
 	InertialCalibrationAlgorithm() : _calibStage(CalibWidget::CS_START), _calibWindow(nullptr)
@@ -62,6 +62,23 @@ public:
 	virtual void initialize(kinematic::SkeletonConstPtr skeleton,
 		const SensorsDescriptions & sensorsDescription) override
 	{
+		// Initialize mapping (required to find a root sensor)
+		_skeleton = skeleton;
+		const auto order = kinematic::LinearizedSkeleton::Visitor::createNonLeafOrderKey(*skeleton, [](const kinematic::Skeleton::JointData & jointData) { return jointData.name(); });
+		_nodesMapping = utils::LinearizedTree::convert(order);
+
+		// Find Root
+		ROOT_BONE_NAME = FindRootBoneName(sensorsDescription);
+		if (ROOT_BONE_NAME.empty())
+			throw std::exception("Can't find root bone");
+
+		#pragma warn("double root detection needed");
+
+		//_nodesMapping.right.at("HumanoidRoot"); jest przy czêœciowym szkielecie problem z wyszukiwaniem roota
+		//	dobrym wskazaniem sa segmenty z sensdesc z najnizszym jointidx
+		//	musze sie zabezpieczyc na kilka rozerwanych lancuchow kinematycznych
+
+		// Initialize descriptions
 		_sensorAdjustements = sensorsDescription;
 	}
 
@@ -89,11 +106,11 @@ public:
 		osg::Quat rootBowRotation, zFix;
 
 		// No root data - no point to callibrate
-		if (rootSensorID == -1)
+		if (rootSensorID == std::numeric_limits<imuCostume::Costume::SensorID>::max())
 			return false;
 
 		// Always update cache - RAW orientations
-		sdCloneAndUpdate(_stageCache, data, true);
+		sdCloneAndUpdate(_stageCache, data, _sensorAdjustements, true);
 
 		// Parse proper stage
 		switch (_calibStage)
@@ -210,8 +227,11 @@ private:
 
 	CalibWidget* _calibWindow;
 
+	kinematic::SkeletonConstPtr _skeleton;
+	utils::LinearizedTree::Mapping<std::string> _nodesMapping;
+
 	//! Extracts orientations from IMU data vector
-	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData, bool invertAll = false) const
+	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData, const SensorsDescriptions& inFilter,  bool invertAll = false) const
 	{
 		RawSensorOrientations retVec;
 
@@ -220,7 +240,9 @@ private:
 			// Extraction with inversion
 			for (const auto& item : inData)
 			{
-				retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation.inverse()));
+				// Is it on the list?
+				if (inFilter.find(item.first) != inFilter.end())
+					retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation.inverse()));
 			}
 		}
 		else
@@ -228,7 +250,9 @@ private:
 			// Regular extraction
 			for (const auto& item : inData)
 			{
-				retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation));
+				// Is it on the list?
+				if (inFilter.find(item.first) != inFilter.end())
+					retVec.insert(RawSensorOrientations::value_type(item.first, item.second.orientation));
 			}
 		}
 
@@ -236,14 +260,16 @@ private:
 	}
 
 	//! Extracts orientations from IMU data vector
-	void sdCloneAndUpdate(RawSensorOrientations& outData, const IMU::SensorsData& inData, bool invertAll = false) const
+	void sdCloneAndUpdate(RawSensorOrientations& outData, const IMU::SensorsData& inData, const SensorsDescriptions& inFilter, bool invertAll = false) const
 	{
 		if (invertAll)
 		{
 			// Extraction with inversion
 			for (const auto& item : inData)
 			{
-				outData[item.first] = item.second.orientation.inverse();
+				// Is it on the list?
+				if (inFilter.find(item.first) != inFilter.end())
+					outData[item.first] = item.second.orientation.inverse();
 			}
 		}
 		else
@@ -251,7 +277,9 @@ private:
 			// Regular extraction
 			for (const auto& item : inData)
 			{
-				outData[item.first] = item.second.orientation;
+				// Is it on the list?
+				if (inFilter.find(item.first) != inFilter.end())
+					outData[item.first] = item.second.orientation;
 			}
 		}
 	}
@@ -292,7 +320,29 @@ private:
 		}
 
 		// Errorneous ID
-		return -1;
+		return std::numeric_limits<imuCostume::Costume::SensorID>::max();
+	}
+
+	//! Finds root sensor name using lowest ID
+	std::string FindRootBoneName(const SensorsDescriptions& inSensorDesc) const
+	{
+		imuCostume::Costume::SensorID bestID = std::numeric_limits<imuCostume::Costume::SensorID>::max();
+		kinematic::LinearizedSkeleton::NodeIDX jointID = std::numeric_limits<kinematic::LinearizedSkeleton::NodeIDX>::max();
+		for (const auto& item : inSensorDesc)
+		{
+			// Better id - memorize it
+			if (item.second.jointIdx < jointID)
+			{
+				bestID = item.first;
+				jointID = item.second.jointIdx;
+			}
+		}
+
+		// Not found
+		if (bestID == std::numeric_limits<imuCostume::Costume::SensorID>::max())
+			return "";
+		else
+			return inSensorDesc.at(bestID).jointName;
 	}
 
 	// Calculates zFix
@@ -834,9 +884,6 @@ public:
 	}
 };
 
-// Configuration statics
-std::string InertialCalibrationAlgorithm::ROOT_BONE_NAME = "HumanoidRoot";
-
 // Helper ID for Matlab Dumper Estimation Algorithm
 #ifdef STATIC_TOPOLOGY
 unsigned int HardwareKalmanEstimationAlgorithm::_currSensorID = 0;
@@ -919,7 +966,7 @@ bool PluginHelper::init()
 			imuDS->registerOrientationEstimationAlgorithm(IMU::IIMUOrientationEstimationAlgorithmPtr(new HardwareKalmanEstimationAlgorithm));
 
 			//szkielet
-			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>(createJoint(kinematic::Skeleton::JointPtr(), InertialCalibrationAlgorithm::ROOT_BONE_NAME, norm(osg::Vec3(0, 0, 0))));
+			auto dummySkeleton = utils::make_shared<kinematic::Skeleton>(createJoint(kinematic::Skeleton::JointPtr(), "HumanoidRoot", norm(osg::Vec3(0, 0, 0))));
 			//dummySkeleton->name = "DummySkeleton";
 
 #ifdef STATIC_TOPOLOGY
