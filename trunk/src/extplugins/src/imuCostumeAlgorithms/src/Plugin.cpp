@@ -28,7 +28,59 @@ class InertialCalibrationAlgorithm : public IMU::IMUCostumeCalibrationAlgorithm
 	UNIQUE_ID("{D7801231-BACA-42C6-9A8E-0000000A563F}");
 
 private:
+	//! My special types
 	typedef std::map<imuCostume::Costume::SensorID, osg::Quat> RawSensorOrientations;
+
+	//! Class checking if my root is accessing from every selected joint
+	class CVisMyTree_Impl : public kinematic::LinearizedSkeleton::Visitor
+	{
+	private:
+		//! Root pointer to be found
+		kinematic::Skeleton::JointConstPtr _soCalledRootPtr;
+
+		//! Is root always accessible
+		bool& _isRootAccessible;
+
+		//! Lookup list for allowed joints
+		std::set<std::string> _jointInUse;
+
+	public:
+		//! Simple constructor (sets root pointer to find)
+		CVisMyTree_Impl(kinematic::Skeleton::JointConstPtr soCalledRoot, bool& isRootAccessibleRef,
+			const SensorsDescriptions& descList) : _soCalledRootPtr(soCalledRoot), _isRootAccessible(isRootAccessibleRef)
+		{
+			// Create allowed joints filter
+			for (const auto& sensDesc : descList)
+			{
+				_jointInUse.insert(sensDesc.second.jointName);
+			}
+		}
+
+		//! Function performing visiting
+		void operator() (kinematic::Skeleton::JointConstPtr jointPtr)
+		{
+			// Cycle up helper variable
+			kinematic::Skeleton::JointConstPtr currJointPtr = jointPtr;
+
+			// Go up, to the root
+			while (currJointPtr)
+			{
+				// Is that checked joint on the adjustement list?
+				if (_jointInUse.find(jointPtr->value().name()) == _jointInUse.end())
+					return; // Shold not be checked
+
+				// Did we find root bone?
+				if (currJointPtr == _soCalledRootPtr)
+					return; // Flag should be untouched - default: true
+
+				// Go up!
+				currJointPtr = currJointPtr->parent();
+			}
+
+			// Something went wrong
+			_isRootAccessible = false;
+		}
+	};
 
 public:
 	//! Global root bone name
@@ -64,22 +116,29 @@ public:
 	{
 		// Initialize mapping (required to find a root sensor)
 		_skeleton = skeleton;
-		const auto order = kinematic::LinearizedSkeleton::Visitor::createNonLeafOrderKey(*skeleton, [](const kinematic::Skeleton::JointData & jointData) { return jointData.name(); });
+		const auto order = kinematic::LinearizedSkeleton::Visitor::createNonLeafOrderKey(*skeleton, [](const kinematic::Skeleton::JointData & jointData) {	return jointData.name(); });
 		_nodesMapping = utils::LinearizedTree::convert(order);
 
-		// Find Root
+		// Find Root Name
 		ROOT_BONE_NAME = FindRootBoneName(sensorsDescription);
 		if (ROOT_BONE_NAME.empty())
 			throw std::exception("Can't find root bone");
 
-		#pragma warn("double root detection needed");
-
-		//_nodesMapping.right.at("HumanoidRoot"); jest przy czêœciowym szkielecie problem z wyszukiwaniem roota
-		//	dobrym wskazaniem sa segmenty z sensdesc z najnizszym jointidx
-		//	musze sie zabezpieczyc na kilka rozerwanych lancuchow kinematycznych
+		// Find Root Ptr
+		auto skeletonPtrMap = _skeleton->joints(_skeleton->root());
+		auto rootJointPtrIter = skeletonPtrMap.find(ROOT_BONE_NAME);
+		if (rootJointPtrIter == skeletonPtrMap.end())
+			throw std::exception("Can't find root bone ptr");
 
 		// Initialize descriptions
 		_sensorAdjustements = sensorsDescription;
+
+		// Check if all the selected sensors connect to my root
+		bool isRootAccessible = true;
+		CVisMyTree_Impl visInstance(rootJointPtrIter->second, isRootAccessible, _sensorAdjustements);
+		kinematic::LinearizedSkeleton::Visitor::visit(*_skeleton, visInstance);
+		if (!isRootAccessible)
+			throw std::exception("Topology inconsistent");
 	}
 
 	//! Calculates orientation from sensor fusion
