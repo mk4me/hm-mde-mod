@@ -117,7 +117,7 @@ public:
 		// Initialize mapping (required to find a root sensor)
 		_skeleton = skeleton;
 		const auto order = kinematic::LinearizedSkeleton::Visitor::createNonLeafOrderKey(*skeleton, [](const kinematic::Skeleton::JointData & jointData) {	return jointData.name(); });
-		_nodesMapping = utils::LinearizedTree::convert(order);
+		_nodesMapping = treeContainer::Linearization::convert(order);
 
 		// Find Root Name
 		ROOT_BONE_NAME = FindRootBoneName(sensorsDescription);
@@ -227,9 +227,9 @@ public:
 			// Clear sensor adjustements
 			for (auto& saKeyVal : _sensorAdjustements)
 			{
-				saKeyVal.second.offset = osg::Vec3d(0.0, 0.0, 0.0);
-				saKeyVal.second.preMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
-				saKeyVal.second.postMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+				saKeyVal.second.adjustment.offset = osg::Vec3d(0.0, 0.0, 0.0);
+				saKeyVal.second.adjustment.preMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
+				saKeyVal.second.adjustment.postMulRotation = osg::Quat(0.0, 0.0, 0.0, 1.0);
 			}
 
 			// Fill callibration table
@@ -238,8 +238,8 @@ public:
 			{
 				// Get element reference
 				auto & saRef = _sensorAdjustements[calBindItem.first];
-				saRef.preMulRotation = zFix * calBindItem.second; // Align face and calib sensor to global coordinate frame (with respect to accel (-Z) and global north (X))
-				saRef.postMulRotation = zFix.inverse();
+				saRef.adjustment.preMulRotation = zFix * calBindItem.second; // Align face and calib sensor to global coordinate frame (with respect to accel (-Z) and global north (X))
+				saRef.adjustment.postMulRotation = zFix.inverse();
 			}
 
 			// Callibration is finished, form will be killed now
@@ -269,7 +269,7 @@ public:
 
 		for (const auto & sd : _sensorAdjustements)
 		{
-			ret.insert(SensorsAdjustemnts::value_type(sd.first, sd.second));
+			ret.insert({ sd.first, sd.second.adjustment });
 		}
 
 		return ret;
@@ -287,7 +287,7 @@ private:
 	CalibWidget* _calibWindow;
 
 	kinematic::SkeletonConstPtr _skeleton;
-	utils::LinearizedTree::Mapping<std::string> _nodesMapping;
+	treeContainer::Linearization::Mapping<std::string> _nodesMapping;
 
 	//! Extracts orientations from IMU data vector
 	RawSensorOrientations sdCloneOrientations(const IMU::SensorsData& inData, const SensorsDescriptions& inFilter,  bool invertAll = false) const
@@ -465,7 +465,7 @@ public:
 		this->sensorsMapping = sensorsDescription;
 		//this->nodesMapping = kinematic::LinearizedSkeleton::Visitor::createNonLeafMappingKey(*skeleton, [](const kinematic::Skeleton::JointData & jointData) { return jointData.name(); });
 		const auto order = kinematic::LinearizedSkeleton::Visitor::createNonLeafOrderKey(*skeleton, [](const kinematic::Skeleton::JointData & jointData) { return jointData.name(); });
-		this->nodesMapping = utils::LinearizedTree::convert(order);
+		this->nodesMapping = treeContainer::Linearization::convert(order);
 	}
 
 	//! Calculates orientation from sensor fusion
@@ -536,7 +536,7 @@ public:
 		// Update cache (I assume data comes incomplete, till proven wrong)
 		for (auto& keyVal : data)
 		{
-			_dataCache[keyVal.first] = g_sensorsAdjustements[keyVal.first].preMulRotation * keyVal.second.orientation * g_sensorsAdjustements[keyVal.first].postMulRotation;
+			_dataCache[keyVal.first] = g_sensorsAdjustements[keyVal.first].adjustment.preMulRotation * keyVal.second.orientation * g_sensorsAdjustements[keyVal.first].adjustment.postMulRotation;
 		}
 
 		// Set root (always 0 index)
@@ -564,7 +564,7 @@ private:
 	IMU::IMUCostumeCalibrationAlgorithm::SensorsDescriptions sensorsMapping;
 	boost::posix_time::ptime _lastTick;
 	std::map<imuCostume::Costume::SensorID, osg::Quat> _dataCache;
-	utils::LinearizedTree::Mapping<std::string> nodesMapping;
+	treeContainer::Linearization::Mapping<std::string> nodesMapping;
 };
 
 //! Matlab dumper (fake filter) - generates orientation as a quaternion using IMU sensor fusion
@@ -949,13 +949,13 @@ unsigned int HardwareKalmanEstimationAlgorithm::_currSensorID = 0;
 #endif
 unsigned int MatlabDumpEstimationAlgorithm::_IntID = 0;
 volatile bool PluginHelper::finish = false;
-core::IDataManagerReader::ObjectObserverPtr PluginHelper::objectObserver = core::IDataManagerReader::ObjectObserverPtr();
+core::IDataManagerReader::ObserverPtr PluginHelper::objectObserver = core::IDataManagerReader::ObserverPtr();
 core::Thread PluginHelper::streamQuerryingThread = core::Thread();
 IMU::CostumeSkeletonMotionConstPtr PluginHelper::skeletonMotion = IMU::CostumeSkeletonMotionConstPtr();
 utils::shared_ptr<threadingUtils::ResetableStreamStatusObserver> PluginHelper::streamObserver = utils::shared_ptr<threadingUtils::ResetableStreamStatusObserver>();
 
 //! Observer object for IMU data stream
-class MotionDataObserver : public core::IDataManagerReader::IObjectObserver
+class MotionDataObserver : public core::IDataManagerReader::IObserver
 {
 public:
 	MotionDataObserver() {}
@@ -964,13 +964,13 @@ public:
 	virtual void observe(const core::IDataManagerReader::ChangeList & changes) override
 	{
 		//pobieram manager hierarchi danych do sprawdzenia czy typ danych mi odpowiada
-		auto dhm = plugin::getDataHierachyManagerReader();
+		auto dhm = plugin::getRegisteredDataTypesManagerReader();
 		//lece po wszystkich zmianach
 		for (const auto & c : changes)
 		{
 			//czy zmiana to dodanie danych i czy typ pasuje
 			if (c.modyfication == core::IDataManagerReader::ADD_OBJECT &&
-				dhm->isTypeCompatible(c.type, typeid(IMU::CostumeSkeletonMotion)) == true){
+				dhm->isBase(c.type, typeid(IMU::CostumeSkeletonMotion)) == true){
 
 				PluginHelper::skeletonMotion = c.currentValue->get();
 				//PluginHelper::streamObserver.reset(new threadingUtils::ResetableStreamStatusObserver);
@@ -1118,7 +1118,7 @@ void PluginHelper::deinit()
 	if (skeletonMotion != nullptr){
 
 		if (streamObserver != nullptr){
-			skeletonMotion->stream->detachObserver(streamObserver);
+			skeletonMotion->stream->detach(streamObserver);
 			streamObserver.reset();
 		}
 

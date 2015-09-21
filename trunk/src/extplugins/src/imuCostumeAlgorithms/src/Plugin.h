@@ -1,5 +1,5 @@
 #include <plugins/imuCostume/Streams.h>
-#include <corelib/ThreadPool.h>
+#include <corelib/Thread.h>
 #include <corelib/IDataManagerReader.h>
 
 class MotionDataObserver;
@@ -18,7 +18,7 @@ public:
 
 private:
 
-	static core::IDataManagerReader::ObjectObserverPtr objectObserver;
+	static core::IDataManagerReader::ObserverPtr objectObserver;
 	static core::Thread streamQuerryingThread;
 	static IMU::CostumeSkeletonMotionConstPtr skeletonMotion;
 	static volatile bool finish;
